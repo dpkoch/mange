@@ -6,20 +6,14 @@
 #include <random>
 #include <vector>
 
-// #define ASSERT_MATRIX_EQ(lhs, rhs) \
-//   for (size_t i = 0; i < (lhs).rows(); i++) { \
-//     for (size_t j = 0; j < (lhs).cols(); j++) { \
-//       ASSERT_DOUBLE_EQ((lhs)(i,j), (rhs)(i,j)); \
-//     } \
-//   }
+::testing::AssertionResult SO2Equal(const mange::SO2 &actual, const mange::SO2 &expect)
+{
+  if (actual.C().isApprox(expect.C()))
+    return ::testing::AssertionSuccess();
+  else
+    return ::testing::AssertionFailure() << "SO2 objects are not equal";
 
-#define ASSERT_MATRIX_EQ(actual, expect) ASSERT_TRUE((actual).isApprox(expect))
-#define EXPECT_MATRIX_EQ(actual, expect) EXPECT_TRUE((actual).isApprox(expect))
-
-#define ASSERT_SO2_EQ(actual, expect) ASSERT_MATRIX_EQ((actual).C(), (expect).C())
-
-#define ASSERT_MATRIX_ZERO(actual) ASSERT_TRUE((actual).isMuchSmallerThan())
-#define EXPECT_MATRIX_ZERO(actual) EXPECT_TRUE((actual).isMuchSmallerThan())
+}
 
 double wrap_angle(double angle)
 {
@@ -53,20 +47,20 @@ protected:
 TEST_F(SO2Test, DefaultValue)
 {
   mange::SO2 X;
-  ASSERT_MATRIX_EQ(X.C(), Eigen::Matrix2d::Identity());
+  ASSERT_TRUE(X.C().isIdentity());
 }
 
 TEST_F(SO2Test, IdentityValue)
 {
-  ASSERT_MATRIX_EQ(mange::SO2::Identity().C(), Eigen::Matrix2d::Identity());
+  ASSERT_TRUE(mange::SO2::Identity().C().isIdentity());
 }
 
 TEST_F(SO2Test, SpecialOrthogonal)
 {
   for (const auto& X : random_X)
   {
-    ASSERT_MATRIX_EQ(X.C() * X.C().transpose(), Eigen::Matrix2d::Identity());
-    ASSERT_MATRIX_EQ(X.C().transpose() * X.C(), Eigen::Matrix2d::Identity());
+    ASSERT_TRUE((X.C() * X.C().transpose()).isIdentity());
+    ASSERT_TRUE((X.C().transpose() * X.C()).isIdentity());
     ASSERT_DOUBLE_EQ(X.C().determinant(), 1.0);
   }
 }
@@ -78,8 +72,8 @@ TEST_F(SO2Test, Closure)
     mange::SO2 X = random_X[i] * random_X[random_X.size() - i - 1];
 
     // make sure it's still a special orthogonal matrix
-    ASSERT_MATRIX_EQ(X.C() * X.C().transpose(), Eigen::Matrix2d::Identity());
-    ASSERT_MATRIX_EQ(X.C().transpose() * X.C(), Eigen::Matrix2d::Identity());
+    ASSERT_TRUE((X.C() * X.C().transpose()).isIdentity());
+    ASSERT_TRUE((X.C().transpose() * X.C()).isIdentity());
     ASSERT_DOUBLE_EQ(X.C().determinant(), 1.0);
   }
 }
@@ -89,8 +83,8 @@ TEST_F(SO2Test, Identity)
   mange::SO2 identity;
   for (const auto& X : random_X)
   {
-    ASSERT_SO2_EQ(X * identity, X);
-    ASSERT_SO2_EQ(identity * X, X);
+    ASSERT_TRUE(SO2Equal(X * identity, X));
+    ASSERT_TRUE(SO2Equal(identity * X, X));
   }
 }
 
@@ -98,8 +92,8 @@ TEST_F(SO2Test, Inverse)
 {
   for (const auto& X : random_X)
   {
-    ASSERT_MATRIX_EQ((X * X.inverse()).C(), Eigen::Matrix2d::Identity());
-    ASSERT_MATRIX_EQ((X.inverse() * X).C(), Eigen::Matrix2d::Identity());
+    ASSERT_TRUE(SO2Equal(X * X.inverse(), mange::SO2::Identity()));
+    ASSERT_TRUE(SO2Equal(X.inverse() * X, mange::SO2::Identity()));
   }
 }
 
@@ -107,8 +101,8 @@ TEST_F(SO2Test, Associativity)
 {
   for (size_t i = 0; i < random_X.size() - 2; i++)
   {
-    ASSERT_MATRIX_EQ(((random_X[i] * random_X[i + 1]) * random_X[i + 2]).C(),
-                     (random_X[i] * (random_X[i + 1] * random_X[i + 2])).C());
+    ASSERT_TRUE(SO2Equal((random_X[i] *  random_X[i + 1]) * random_X[i + 2],
+                          random_X[i] * (random_X[i + 1]  * random_X[i + 2])));
   }
 }
 
@@ -131,7 +125,7 @@ TEST_F(SO2Test, ExpLogInverseMappings)
 
   for (const auto& X : random_X)
   {
-    ASSERT_SO2_EQ(mange::SO2::Exp(X.Log()), X);
+    ASSERT_TRUE(SO2Equal(mange::SO2::Exp(X.Log()), X));
   }
 }
 
