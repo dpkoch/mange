@@ -15,7 +15,7 @@ add_library(${PROJECT_NAME}
 include(GoogleTest)
 find_package(GTest REQUIRED)
 add_executable(${PROJECT_NAME}_test
-    test/SO2.cpp
+    test/lie_group.cpp
 )
 target_link_libraries(${PROJECT_NAME}_test
     ${PROJECT_NAME}
