@@ -13,6 +13,8 @@ public:
   SO2(double rotation);
 
   static SO2 Identity();
+  static SO2 Random();
+
   static SO2 Exp(double phi);
   static double Log(const SO2 &X);
   static double Ad(const SO2 &X);
@@ -29,12 +31,18 @@ public:
 
   SO2 inverse() const;
 
-  void setIdentity();
-  //! @todo void normalize();
-
   SO2 operator*(const SO2 &rhs) const;
   Eigen::Vector2d operator*(const Eigen::Vector2d &x) const;
 
+  void setIdentity();
+  //! @todo void normalize();
+
+  bool isApprox(const SO2 &other) const;
+  bool isIdentity() const;
+
+  const Eigen::Matrix2d &matrix() const { return C_; }
+
+  // SO(2) specific methods
   double rotation() const;
   const Eigen::Matrix2d &C() const { return C_; }
 

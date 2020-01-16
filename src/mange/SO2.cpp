@@ -1,5 +1,6 @@
 #include <mange/SO2.h>
 
+#include <random>
 namespace mange
 {
 
@@ -21,6 +22,15 @@ SO2::SO2(const Eigen::Matrix2d &C) :
 SO2 SO2::Identity()
 {
   return SO2();
+}
+
+SO2 SO2::Random()
+{
+  std::random_device rd;
+  std::mt19937_64 gen(rd());
+  std::uniform_real_distribution<> dist(-100.0, 100.0);
+
+  return SO2(dist(gen));
 }
 
 SO2 SO2::Exp(double phi)
@@ -89,10 +99,6 @@ SO2 SO2::inverse() const
   return SO2(C_.transpose());
 }
 
-void SO2::setIdentity()
-{
-}
-
 SO2 SO2::operator*(const SO2 &rhs) const
 {
   return SO2(C_ * rhs.C_);
@@ -100,12 +106,27 @@ SO2 SO2::operator*(const SO2 &rhs) const
 
 Eigen::Vector2d SO2::operator*(const Eigen::Vector2d &x) const
 {
-  return Eigen::Vector2d::Zero();
+  return C_ * x;
 }
 
 double SO2::rotation() const
 {
   return Log();
+}
+
+void SO2::setIdentity()
+{
+  C_.setIdentity();
+}
+
+bool SO2::isApprox(const SO2 &other) const
+{
+  return C_.isApprox(other.C_);
+}
+
+bool SO2::isIdentity() const
+{
+  return C_.isIdentity();
 }
 
 } // namespace mange
