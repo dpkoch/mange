@@ -1,3 +1,6 @@
+#ifndef MANGE_SO2_H
+#define MANGE_SO2_H
+
 #include <eigen3/Eigen/Core>
 
 namespace mange
@@ -42,3 +45,5 @@ private:
 };
 
 } // namespace mange
+
+#endif // MANGE_SO2_H
