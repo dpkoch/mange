@@ -26,8 +26,8 @@ public:
   static Eigen::Matrix2d hat(double phi);
   static double vee(const Eigen::Matrix2d &x);
 
-  double Log() const;
-  double Ad() const;
+  double Log() const { return Log(*this); }
+  double Ad() const { return Ad(*this); }
 
   SO2 inverse() const;
 

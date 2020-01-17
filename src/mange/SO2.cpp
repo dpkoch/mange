@@ -84,16 +84,6 @@ double SO2::vee(const Eigen::Matrix2d &x)
   return x(1,0);
 }
 
-double SO2::Log() const
-{
-  return Log(*this);
-}
-
-double SO2::Ad() const
-{
-  return Ad(*this);
-}
-
 SO2 SO2::inverse() const
 {
   return SO2(C_.transpose());
