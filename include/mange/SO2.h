@@ -44,7 +44,6 @@ public:
 
   // SO(2) specific methods
   double rotation() const;
-  const Eigen::Matrix2d &C() const { return C_; }
 
 private:
   SO2(const Eigen::Matrix2d &C);

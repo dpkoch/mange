@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+
 #include <mange/SO2.h>
+#include <mange/SE2.h>
 
 #include <eigen3/Eigen/Dense>
 
@@ -21,6 +23,13 @@ template <> struct TypeDefs<mange::SO2>
 {
   typedef double Vector;
   typedef Eigen::Matrix2d Algebra;
+  typedef Eigen::Vector2d Domain;
+};
+
+template <> struct TypeDefs<mange::SE2>
+{
+  typedef Eigen::Vector3d Vector;
+  typedef Eigen::Matrix3d Algebra;
   typedef Eigen::Vector2d Domain;
 };
 
@@ -47,9 +56,20 @@ template <>
 bool isValidGroupMember(const mange::SO2 &X)
 {
   // should be orthogonal matrix with determinant 1
-  return (X.C() * X.C().transpose()).isIdentity()
-         && (X.C().transpose() * X.C()).isIdentity()
-         && doubleEqual(X.C().determinant(), 1.0);
+  return (X.matrix() * X.matrix().transpose()).isIdentity()
+         && (X.matrix().transpose() * X.matrix()).isIdentity()
+         && doubleEqual(X.matrix().determinant(), 1.0);
+}
+
+template <>
+bool isValidGroupMember(const mange::SE2 &X)
+{
+  // this tests that the rotation component is valid, and also that the matrix
+  // representation returned is proper
+  Eigen::Matrix3d T = X.matrix();
+  return isValidGroupMember(X.C())
+    && T.topLeftCorner<2,2>(0,0).isApprox(X.C().matrix())
+    && T(2,0) == 0.0 && T(2,1) == 0.0 && T(2,2) == 1.0;
 }
 
 // identity element
@@ -59,7 +79,13 @@ bool isIdentityElement(const Group &X) = delete;
 template <>
 bool isIdentityElement(const mange::SO2 &X)
 {
-  return X.C().isIdentity();
+  return X.matrix().isIdentity();
+}
+
+template <>
+bool isIdentityElement(const mange::SE2 &X)
+{
+  return isIdentityElement(X.C()) && X.r().isZero();
 }
 
 // random vectors
@@ -130,6 +156,18 @@ template <>
     return ::testing::AssertionFailure() << "log: " << log_x << ", constrained: " << constrained_x;
 }
 
+template <>
+::testing::AssertionResult tangentVectorsEqual<mange::SE2>(const Eigen::Vector3d &log_x, const Eigen::Vector3d &original_x)
+{
+  Eigen::Vector3d constrained_x;
+  constrained_x << original_x(0), original_x(1), wrap_angle(original_x(2));
+
+  if (original_x.isApprox(log_x))
+    return ::testing::AssertionSuccess();
+  else
+    return ::testing::AssertionFailure() << "log: " << log_x << ", constrained: " << constrained_x;
+}
+
 // check that group action does not change norm of vectors in its domain
 template <typename Domain>
 ::testing::AssertionResult normEqual(const Domain &actual, const Domain &expect)
@@ -172,8 +210,8 @@ protected:
 // test cases
 //==============================================================================
 
-using LieGroupTypes = ::testing::Types<mange::SO2>;
-TYPED_TEST_CASE(LieGroupTest, LieGroupTypes); //! @note TYPED_TEST_CASE will be replace by TYPED_TEST_SUITE in googletest v1.10.x
+using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2>;
+TYPED_TEST_CASE(LieGroupTest, LieGroupTypes); //!< @note TYPED_TEST_CASE will be replace by TYPED_TEST_SUITE in googletest v1.10.x
 
 TYPED_TEST(LieGroupTest, IdentityValue)
 {
@@ -263,7 +301,8 @@ TYPED_TEST(LieGroupTest, Adjoint)
     const auto &X = this->random_X[i];
     const auto &x = this->random_x[i];
 
-    ASSERT_TRUE(vectorsEqual(X.Ad() * x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
+    typename TypeDefs<TypeParam>::Vector Ad_x = X.Ad() * x; // assignment required to evaluate Eigen product expression down to matrix type for template matching
+    ASSERT_TRUE(vectorsEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
   }
 }
 
