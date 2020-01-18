@@ -68,7 +68,7 @@ bool isValidGroupMember(const mange::SE2 &X)
   // representation returned is proper
   Eigen::Matrix3d T = X.matrix();
   return isValidGroupMember(X.C())
-    && T.topLeftCorner<2,2>(0,0).isApprox(X.C().matrix())
+    && T.topLeftCorner<2,2>().isApprox(X.C().matrix())
     && T(2,0) == 0.0 && T(2,1) == 0.0 && T(2,2) == 1.0;
 }
 
@@ -170,12 +170,25 @@ template <>
 
 // check that group action does not change norm of vectors in its domain
 template <typename Domain>
-::testing::AssertionResult normEqual(const Domain &actual, const Domain &expect)
+::testing::AssertionResult normEqual(const Domain &after, const Domain &before)
 {
-  if (doubleEqual(actual.norm(), expect.norm()))
+  if (doubleEqual(after.norm(), before.norm()))
     return ::testing::AssertionSuccess();
   else
-    return ::testing::AssertionFailure() << "actual: " << actual.norm() << ", expected: " << expect.norm();
+    return ::testing::AssertionFailure() << "after: " << after.norm() << ", before: " << before.norm();
+}
+
+template <typename Group>
+::testing::AssertionResult actionValid(const typename TypeDefs<Group>::Domain &after,
+                                       const typename TypeDefs<Group>::Domain &before)
+{
+  return ::testing::AssertionSuccess(); // no checks for SE(n)
+}
+
+template <>
+::testing::AssertionResult actionValid<mange::SO2>(const Eigen::Vector2d &after, const Eigen::Vector2d &before)
+{
+  return normEqual(after, before);
 }
 
 //==============================================================================
@@ -221,6 +234,16 @@ TYPED_TEST(LieGroupTest, IdentityValue)
 TYPED_TEST(LieGroupTest, DefaultValue)
 {
   ASSERT_TRUE(isIdentityElement(TypeParam()));
+}
+
+TYPED_TEST(LieGroupTest, Exp)
+{
+  for (const auto& x : this->random_x)
+  {
+    TypeParam X = TypeParam::Exp(x);
+    ASSERT_TRUE(isValidGroupMember(X));
+    ASSERT_FALSE(X.isIdentity()); //!< @todo Could fail if we happen to get a random zero element!
+  }
 }
 
 TYPED_TEST(LieGroupTest, Closure)
@@ -313,6 +336,6 @@ TYPED_TEST(LieGroupTest, Action)
     const auto &X = this->random_X[i];
     const auto &v = this->random_domain[i];
 
-    ASSERT_TRUE(normEqual(X*v, v));
+    ASSERT_TRUE(actionValid<TypeParam>(X*v, v));
   }
 }

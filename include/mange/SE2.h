@@ -12,20 +12,20 @@ class SE2
 {
 public:
   SE2();
-  SE2(const Eigen::Vector3d &phi);
+  SE2(const Eigen::Vector3d &xi);
 
   static SE2 Identity();
   static SE2 Random();
 
-  static SE2 Exp(const Eigen::Vector3d &phi);
+  static SE2 Exp(const Eigen::Vector3d &xi);
   static Eigen::Vector3d Log(const SE2 &X);
   static Eigen::Matrix3d Ad(const SE2 &X);
-  static Eigen::Matrix3d Jl(const Eigen::Vector3d &phi);
-  static Eigen::Matrix3d Jr(const Eigen::Vector3d &phi);
-  static Eigen::Matrix3d JlInverse(const Eigen::Vector3d &phi);
-  static Eigen::Matrix3d JrInverse(const Eigen::Vector3d &phi);
+  static Eigen::Matrix3d Jl(const Eigen::Vector3d &xi);
+  static Eigen::Matrix3d Jr(const Eigen::Vector3d &xi);
+  static Eigen::Matrix3d JlInverse(const Eigen::Vector3d &xi);
+  static Eigen::Matrix3d JrInverse(const Eigen::Vector3d &xi);
 
-  static Eigen::Matrix3d hat(const Eigen::Vector3d &phi);
+  static Eigen::Matrix3d hat(const Eigen::Vector3d &xi);
   static Eigen::Vector3d vee(const Eigen::Matrix3d &x);
 
   Eigen::Vector3d Log() const { return Log(*this); }
@@ -49,7 +49,9 @@ public:
   const Eigen::Vector2d &r() const { return r_; }
 
 private:
-  SE2(const Eigen::Matrix2d &C, const Eigen::Vector2d& r);
+  static constexpr double EPSILON = 1e-12;
+
+  SE2(const SO2 &C, const Eigen::Vector2d& r);
 
   SO2 C_;
   Eigen::Vector2d r_;

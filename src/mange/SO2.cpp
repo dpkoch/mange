@@ -73,10 +73,10 @@ double SO2::JrInverse(double phi)
 
 Eigen::Matrix2d SO2::hat(double phi)
 {
-  Eigen::Matrix2d phihat;
-  phihat << 0.0, -phi,
-            phi,  0.0;
-  return phihat;
+  Eigen::Matrix2d x;
+  x << 0.0, -phi,
+       phi,  0.0;
+  return x;
 }
 
 double SO2::vee(const Eigen::Matrix2d &x)
