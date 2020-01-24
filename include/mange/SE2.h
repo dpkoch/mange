@@ -51,7 +51,8 @@ public:
 private:
   static constexpr double EPSILON = 1e-12;
 
-  SE2(const SO2 &C, const Eigen::Vector2d& r);
+  SE2(const SO2 &C, const Eigen::Vector2d &r);
+  static Eigen::Matrix3d ad(const Eigen::Vector3d &xi);
 
   SO2 C_;
   Eigen::Vector2d r_;

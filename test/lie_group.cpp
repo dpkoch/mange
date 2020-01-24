@@ -150,7 +150,7 @@ template <>
 {
   double constrained_x = wrap_angle(original_x);
 
-  if (doubleNear(log_x, constrained_x, 1e-12))
+  if (doubleNear(log_x, constrained_x, 1e-10))
     return ::testing::AssertionSuccess();
   else
     return ::testing::AssertionFailure() << "log: " << log_x << ", constrained: " << constrained_x;
@@ -168,7 +168,8 @@ template <>
     return ::testing::AssertionFailure() << "log: " << log_x << ", constrained: " << constrained_x;
 }
 
-// check that group action does not change norm of vectors in its domain
+// check that group action satisfies any constraints
+
 template <typename Domain>
 ::testing::AssertionResult normEqual(const Domain &after, const Domain &before)
 {
@@ -189,6 +190,26 @@ template <>
 ::testing::AssertionResult actionValid<mange::SO2>(const Eigen::Vector2d &after, const Eigen::Vector2d &before)
 {
   return normEqual(after, before);
+}
+
+// check that (left or right) Jacobian and its inverse are actually inverses
+template <typename T>
+::testing::AssertionResult jacobianAndInverse(const T &J, const T &Jinverse)
+{
+  if ((J * Jinverse).isIdentity() && (Jinverse * J).isIdentity())
+    return ::testing::AssertionSuccess();
+  else
+    return ::testing::AssertionFailure() << "J and Jinverse are not inverses of each other!"
+                                         << std::endl << "J: " << std::endl << J
+                                         << std::endl << "Jinverse: " << std::endl << Jinverse;
+}
+
+::testing::AssertionResult jacobianAndInverse(double J, double Jinverse)
+{
+  if (doubleEqual(J * Jinverse, 1.0))
+    return ::testing::AssertionSuccess();
+  else
+    return ::testing::AssertionFailure() << "J and Jinverse are not inverses of each other! J: " << J << ", Jinverse: " << Jinverse;
 }
 
 //==============================================================================
@@ -337,5 +358,14 @@ TYPED_TEST(LieGroupTest, Action)
     const auto &v = this->random_domain[i];
 
     ASSERT_TRUE(actionValid<TypeParam>(X*v, v));
+  }
+}
+
+TYPED_TEST(LieGroupTest, JacobiansAndInverses)
+{
+  for (const auto &x : this->random_x)
+  {
+    ASSERT_TRUE(jacobianAndInverse(TypeParam::Jl(x), TypeParam::JlInverse(x)));
+    ASSERT_TRUE(jacobianAndInverse(TypeParam::Jr(x), TypeParam::JrInverse(x)));
   }
 }
