@@ -89,33 +89,26 @@ Eigen::Matrix3d SE2::Ad(const SE2 &X)
 Eigen::Matrix3d SE2::Jl(const Eigen::Vector3d &xi)
 {
   double phi = xi(2);
+  double alpha1, alpha2; // coefficients for ξ⋏ and (ξ⋏)²
+
+  // use exact coefficients if |φ|<ε
+  if (std::abs(phi) > EPSILON) //!< @todo EPSILON may be too big since we have φ³ in the denominator
+  {
+    alpha1 = (1.0 - std::cos(phi)) / std::pow(phi, 2);
+    alpha2 = (phi - std::sin(phi)) / std::pow(phi, 3);
+  }
+  else // otherwise use Taylor-series expansion
+  {
+    double phi_2 = phi*phi;
+    double phi_4 = phi_2*phi_2;
+    double phi_6 = phi_4*phi_2;
+
+    alpha1 = 0.5 - phi_2/24.0 + phi_4/720.0 - phi_6/40320.0;
+    alpha2 = 1.0/6.0 - phi_2/120.0 + phi_4/5040.0 - phi_6/362880.0;
+  }
+
   Eigen::Matrix3d ad_xi = ad(xi);
-
-  if (std::abs(phi) > EPSILON) //!< @todo EPSILON may be too big since we have phi^3 in the denominator
-  {
-    return Eigen::Matrix3d::Identity()
-      + (1 - std::cos(phi))/std::pow(phi, 2) * ad_xi
-      + (phi - std::sin(phi))/std::pow(phi, 3) * (ad_xi * ad_xi);
-  }
-  else // use Taylor-series expansion
-  {
-    // J_l = \sum_{n=0}^\infty \frac{1}{(n+1)!} (\xi^\curlywedge)^n
-
-    // n = 0
-    Eigen::Matrix3d J = Eigen::Matrix3d::Identity();
-    Eigen::Matrix3d ad_xi_pow = Eigen::Matrix3d::Identity();
-    double factorial = 1.0;
-
-    // n = 1 to N
-    for (int n = 1; n <= 3; n++)
-    {
-      ad_xi_pow *= ad_xi;
-      factorial *= (n+1);
-      J += 1.0/factorial * ad_xi_pow;
-    }
-
-    return J;
-  }
+  return Eigen::Matrix3d::Identity() + alpha1*ad_xi + alpha2*(ad_xi*ad_xi);
 }
 
 Eigen::Matrix3d SE2::Jr(const Eigen::Vector3d &xi)
@@ -126,7 +119,6 @@ Eigen::Matrix3d SE2::Jr(const Eigen::Vector3d &xi)
 Eigen::Matrix3d SE2::JlInverse(const Eigen::Vector3d &xi)
 {
   double phi = xi(2);
-  Eigen::Matrix3d ad_xi = ad(xi);
   double alpha; // coefficient for (ξ⋏)²
 
   // use exact expression if |φ| > ε, and φ is not an integer multiple of 2π
@@ -139,6 +131,7 @@ Eigen::Matrix3d SE2::JlInverse(const Eigen::Vector3d &xi)
     alpha = 1.0/12.0 + std::pow(phi, 2)/720.0 + std::pow(phi, 4)/30240.0 + std::pow(phi, 6)/1209600.0;
   }
 
+  Eigen::Matrix3d ad_xi = ad(xi);
   return Eigen::Matrix3d::Identity() - 0.5*ad_xi + alpha*(ad_xi*ad_xi);
 }
 
