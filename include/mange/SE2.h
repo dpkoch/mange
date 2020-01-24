@@ -13,6 +13,7 @@ class SE2
 public:
   SE2();
   SE2(const Eigen::Vector3d &xi);
+  SE2(const Eigen::Vector2d &translation, double rotation);
 
   static SE2 Identity();
   static SE2 Random();

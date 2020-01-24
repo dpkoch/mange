@@ -13,6 +13,12 @@ SE2::SE2(const Eigen::Vector3d &xi)
   *this = Exp(xi);
 }
 
+SE2::SE2(const Eigen::Vector2d &translation, double rotation) :
+  C_(rotation),
+  r_(translation)
+{
+}
+
 SE2::SE2(const SO2 &C, const Eigen::Vector2d &r) :
   C_(C),
   r_(r)
