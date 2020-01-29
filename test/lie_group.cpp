@@ -196,12 +196,14 @@ template <>
 template <typename T>
 ::testing::AssertionResult jacobianAndInverse(const T &J, const T &Jinverse)
 {
-  if ((J * Jinverse).isIdentity() && (Jinverse * J).isIdentity())
+  if ((J * Jinverse).isIdentity(1e-10) && (Jinverse * J).isIdentity(1e-10))
     return ::testing::AssertionSuccess();
   else
     return ::testing::AssertionFailure() << "J and Jinverse are not inverses of each other!"
                                          << std::endl << "J: " << std::endl << J
-                                         << std::endl << "Jinverse: " << std::endl << Jinverse;
+                                         << std::endl << "Jinverse: " << std::endl << Jinverse
+                                         << std::endl << "J*Jinverse: " << std::endl << (J*Jinverse)
+                                         << std::endl << "Jinverse*J: " << std::endl << (Jinverse*J);
 }
 
 ::testing::AssertionResult jacobianAndInverse(double J, double Jinverse)
@@ -367,5 +369,13 @@ TYPED_TEST(LieGroupTest, JacobiansAndInverses)
   {
     ASSERT_TRUE(jacobianAndInverse(TypeParam::Jl(x), TypeParam::JlInverse(x)));
     ASSERT_TRUE(jacobianAndInverse(TypeParam::Jr(x), TypeParam::JrInverse(x)));
+  }
+}
+
+TYPED_TEST(LieGroupTest, InverseOfExpIsExpOfNegative)
+{
+  for (const auto &x : this->random_x)
+  {
+    ASSERT_TRUE(TypeParam::Exp(x).inverse().isApprox(TypeParam::Exp(-x)));
   }
 }
