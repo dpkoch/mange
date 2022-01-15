@@ -25,7 +25,7 @@ SE2 SE2::Random() {
 SE2 SE2::Exp(const VectorType &xi) {
     SE2 result;
 
-    SO2::VectorType phi = xi(2);
+    const SO2::VectorType phi = xi(2);
     result.C_ = SO2(phi);
 
     double a, b;
@@ -37,14 +37,14 @@ SE2 SE2::Exp(const VectorType &xi) {
         a = 1.0 - std::pow(phi, 2) / 6.0 + std::pow(phi, 4) / 120.0;
         b = phi / 2.0 - std::pow(phi, 3) / 24.0;
     }
-    Eigen::Matrix2d V = (a * Eigen::Matrix2d::Identity() + b * SO2::hat(1.0));
+    const Eigen::Matrix2d V = (a * Eigen::Matrix2d::Identity() + b * SO2::hat(1.0));
     result.r_ = V * xi.topRows<2>();
 
     return result;
 }
 
 SE2::VectorType SE2::Log(const SE2 &X) {
-    SO2::VectorType phi = X.C_.Log();
+    const SO2::VectorType phi = X.C_.Log();
 
     VectorType xi;
     xi(2) = phi;
@@ -58,7 +58,7 @@ SE2::VectorType SE2::Log(const SE2 &X) {
         a = 1.0 - std::pow(phi, 2) / 6.0 + std::pow(phi, 4) / 120.0;
         b = phi / 2.0 - std::pow(phi, 3) / 24.0;
     }
-    Eigen::Matrix2d Vinv =
+    const Eigen::Matrix2d Vinv =
         1.0 / (a * a + b * b) * (a * Eigen::Matrix2d::Identity() - b * SO2::hat(1.0));
     xi.topRows<2>() = Vinv * X.r_;
 
@@ -74,7 +74,7 @@ SE2::MappingType SE2::Ad(const SE2 &X) {
 }
 
 SE2::MappingType SE2::Jl(const VectorType &xi) {
-    double phi = xi(2);
+    const SO2::VectorType phi = xi(2);
     double alpha1, alpha2;  // coefficients for ξ⋏ and (ξ⋏)²
 
     // use exact coefficients if |φ|<ε
@@ -93,7 +93,7 @@ SE2::MappingType SE2::Jl(const VectorType &xi) {
         alpha2 = 1.0 / 6.0 - phi_2 / 120.0 + phi_4 / 5040.0 - phi_6 / 362880.0;
     }
 
-    MappingType ad_xi = ad(xi);
+    const MappingType ad_xi = ad(xi);
     return MappingType::Identity() + alpha1 * ad_xi + alpha2 * (ad_xi * ad_xi);
 }
 
@@ -102,7 +102,7 @@ SE2::MappingType SE2::Jr(const VectorType &xi) {
 }
 
 SE2::MappingType SE2::JlInverse(const VectorType &xi) {
-    double phi = xi(2);
+    const SO2::VectorType phi = xi(2);
     double alpha;  // coefficient for (ξ⋏)²
 
     // use exact expression if |φ| > ε, and φ is not an integer multiple of 2π
@@ -115,7 +115,7 @@ SE2::MappingType SE2::JlInverse(const VectorType &xi) {
                 std::pow(phi, 6) / 1209600.0;
     }
 
-    MappingType ad_xi = ad(xi);
+    const MappingType ad_xi = ad(xi);
     return MappingType::Identity() - 0.5 * ad_xi + alpha * (ad_xi * ad_xi);
 }
 
