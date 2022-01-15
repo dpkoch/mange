@@ -4,13 +4,13 @@
 
 namespace mange {
 
-SO2::SO2() : C_(Eigen::Matrix2d::Identity()) {}
+SO2::SO2() : C_(MatrixType::Identity()) {}
 
-SO2::SO2(double rotation) {
-    *this = Exp(rotation);
+SO2::SO2(VectorType phi) {
+    *this = Exp(phi);
 }
 
-SO2::SO2(const Eigen::Matrix2d &C) : C_(C) {}
+SO2::SO2(const MatrixType &C) : C_(C) {}
 
 SO2 SO2::Identity() {
     return SO2();
@@ -24,43 +24,41 @@ SO2 SO2::Random() {
     return SO2(dist(gen));
 }
 
-SO2 SO2::Exp(double phi) {
-    Eigen::Matrix2d C;
-    C << std::cos(phi), -std::sin(phi), std::sin(phi), std::cos(phi);
-    return SO2(C);
+SO2 SO2::Exp(VectorType phi) {
+    SO2 result;
+    result.C_ << std::cos(phi), -std::sin(phi), std::sin(phi), std::cos(phi);
+    return result;
 }
 
-double SO2::Log(const SO2 &X) {
+SO2::VectorType SO2::Log(const SO2 &X) {
     return std::atan2(X.C_(1, 0), X.C_(0, 0));
 }
 
-double SO2::Ad(const SO2 &X) {
+SO2::MappingType SO2::Ad(const SO2 &X) {
     return 1.0;
 }
 
-double SO2::Jl(double phi) {
+SO2::MappingType SO2::Jl(VectorType phi) {
     return 1.0;
 }
 
-double SO2::Jr(double phi) {
+SO2::MappingType SO2::Jr(VectorType phi) {
     return 1.0;
 }
 
-double SO2::JlInverse(double phi) {
+SO2::MappingType SO2::JlInverse(VectorType phi) {
     return 1.0;
 }
 
-double SO2::JrInverse(double phi) {
+SO2::MappingType SO2::JrInverse(VectorType phi) {
     return 1.0;
 }
 
-Eigen::Matrix2d SO2::hat(double phi) {
-    Eigen::Matrix2d x;
-    x << 0.0, -phi, phi, 0.0;
-    return x;
+SO2::AlgebraType SO2::hat(VectorType phi) {
+    return (AlgebraType() << 0.0, -phi, phi, 0.0).finished();
 }
 
-double SO2::vee(const Eigen::Matrix2d &x) {
+SO2::VectorType SO2::vee(const AlgebraType &x) {
     return x(1, 0);
 }
 
@@ -72,7 +70,7 @@ SO2 SO2::operator*(const SO2 &rhs) const {
     return SO2(C_ * rhs.C_);
 }
 
-Eigen::Vector2d SO2::operator*(const Eigen::Vector2d &x) const {
+SO2::DomainType SO2::operator*(const DomainType &x) const {
     return C_ * x;
 }
 

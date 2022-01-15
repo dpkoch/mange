@@ -7,30 +7,39 @@ namespace mange {
 
 class SO2 {
    public:
+    static constexpr int DOF = 1;
+    static constexpr int DIM = 2;
+
+    using VectorType = double;
+    using MappingType = double;
+    using AlgebraType = Eigen::Matrix2d;
+    using MatrixType = Eigen::Matrix2d;
+    using DomainType = Eigen::Matrix<double, DIM, 1>;
+
     SO2();
-    SO2(double rotation);
+    SO2(VectorType phi);
 
     static SO2 Identity();
     static SO2 Random();
 
-    static SO2 Exp(double phi);
-    static double Log(const SO2 &X);
-    static double Ad(const SO2 &X);
-    static double Jl(double phi);
-    static double Jr(double phi);
-    static double JlInverse(double phi);
-    static double JrInverse(double phi);
+    static SO2 Exp(VectorType phi);
+    static VectorType Log(const SO2 &X);
+    static MappingType Ad(const SO2 &X);
+    static MappingType Jl(VectorType phi);
+    static MappingType Jr(VectorType phi);
+    static MappingType JlInverse(VectorType phi);
+    static MappingType JrInverse(VectorType phi);
 
-    static Eigen::Matrix2d hat(double phi);
-    static double vee(const Eigen::Matrix2d &x);
+    static AlgebraType hat(VectorType phi);
+    static VectorType vee(const AlgebraType &x);
 
-    double Log() const { return Log(*this); }
-    double Ad() const { return Ad(*this); }
+    VectorType Log() const { return Log(*this); }
+    MappingType Ad() const { return Ad(*this); }
 
     SO2 inverse() const;
 
     SO2 operator*(const SO2 &rhs) const;
-    Eigen::Vector2d operator*(const Eigen::Vector2d &x) const;
+    DomainType operator*(const DomainType &x) const;
 
     void setIdentity();
     //! @todo void normalize();
@@ -38,15 +47,15 @@ class SO2 {
     bool isApprox(const SO2 &other) const;
     bool isIdentity() const;
 
-    const Eigen::Matrix2d &matrix() const { return C_; }
+    const MatrixType &matrix() const { return C_; }
 
     // SO(2) specific methods
     double rotation() const;
 
    private:
-    SO2(const Eigen::Matrix2d &C);
+    SO2(const MatrixType &C);
 
-    Eigen::Matrix2d C_;
+    MatrixType C_;
 };
 
 }  // namespace mange

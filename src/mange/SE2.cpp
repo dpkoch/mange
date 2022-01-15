@@ -4,26 +4,28 @@ namespace mange {
 
 SE2::SE2() : r_(Eigen::Vector2d::Zero()) {}
 
-SE2::SE2(const Eigen::Vector3d &xi) {
+SE2::SE2(const VectorType &xi) {
     *this = Exp(xi);
 }
 
-SE2::SE2(const Eigen::Vector2d &translation, double rotation) : C_(rotation), r_(translation) {}
+SE2::SE2(const SO2 &rotation) : C_(rotation) {}
 
-SE2::SE2(const SO2 &C, const Eigen::Vector2d &r) : C_(C), r_(r) {}
+SE2::SE2(const DomainType &translation) : r_(translation) {}
+
+SE2::SE2(const SO2 &rotation, const DomainType &translation) : C_(rotation), r_(translation) {}
 
 SE2 SE2::Identity() {
     return SE2();
 }
 
 SE2 SE2::Random() {
-    return SE2(SO2::Random(), Eigen::Vector2d::Random());
+    return SE2(SO2::Random(), DomainType::Random());
 }
 
-SE2 SE2::Exp(const Eigen::Vector3d &xi) {
+SE2 SE2::Exp(const VectorType &xi) {
     SE2 result;
 
-    double phi = xi(2);
+    SO2::VectorType phi = xi(2);
     result.C_ = SO2(phi);
 
     double a, b;
@@ -41,10 +43,10 @@ SE2 SE2::Exp(const Eigen::Vector3d &xi) {
     return result;
 }
 
-Eigen::Vector3d SE2::Log(const SE2 &X) {
-    double phi = X.C_.Log();
+SE2::VectorType SE2::Log(const SE2 &X) {
+    SO2::VectorType phi = X.C_.Log();
 
-    Eigen::Vector3d xi;
+    VectorType xi;
     xi(2) = phi;
 
     double a, b;
@@ -63,15 +65,15 @@ Eigen::Vector3d SE2::Log(const SE2 &X) {
     return xi;
 }
 
-Eigen::Matrix3d SE2::Ad(const SE2 &X) {
-    Eigen::Matrix3d Adj = Eigen::Matrix3d::Identity();
+SE2::MappingType SE2::Ad(const SE2 &X) {
+    MappingType Adj = MappingType::Identity();
     Adj.topLeftCorner<2, 2>() = X.C_.matrix();
     Adj(0, 2) = X.r_(1);
     Adj(1, 2) = -X.r_(0);
     return Adj;
 }
 
-Eigen::Matrix3d SE2::Jl(const Eigen::Vector3d &xi) {
+SE2::MappingType SE2::Jl(const VectorType &xi) {
     double phi = xi(2);
     double alpha1, alpha2;  // coefficients for ξ⋏ and (ξ⋏)²
 
@@ -91,15 +93,15 @@ Eigen::Matrix3d SE2::Jl(const Eigen::Vector3d &xi) {
         alpha2 = 1.0 / 6.0 - phi_2 / 120.0 + phi_4 / 5040.0 - phi_6 / 362880.0;
     }
 
-    Eigen::Matrix3d ad_xi = ad(xi);
-    return Eigen::Matrix3d::Identity() + alpha1 * ad_xi + alpha2 * (ad_xi * ad_xi);
+    MappingType ad_xi = ad(xi);
+    return MappingType::Identity() + alpha1 * ad_xi + alpha2 * (ad_xi * ad_xi);
 }
 
-Eigen::Matrix3d SE2::Jr(const Eigen::Vector3d &xi) {
+SE2::MappingType SE2::Jr(const VectorType &xi) {
     return Jl(-xi);
 }
 
-Eigen::Matrix3d SE2::JlInverse(const Eigen::Vector3d &xi) {
+SE2::MappingType SE2::JlInverse(const VectorType &xi) {
     double phi = xi(2);
     double alpha;  // coefficient for (ξ⋏)²
 
@@ -113,23 +115,23 @@ Eigen::Matrix3d SE2::JlInverse(const Eigen::Vector3d &xi) {
                 std::pow(phi, 6) / 1209600.0;
     }
 
-    Eigen::Matrix3d ad_xi = ad(xi);
-    return Eigen::Matrix3d::Identity() - 0.5 * ad_xi + alpha * (ad_xi * ad_xi);
+    MappingType ad_xi = ad(xi);
+    return MappingType::Identity() - 0.5 * ad_xi + alpha * (ad_xi * ad_xi);
 }
 
-Eigen::Matrix3d SE2::JrInverse(const Eigen::Vector3d &xi) {
+SE2::MappingType SE2::JrInverse(const VectorType &xi) {
     return JlInverse(-xi);
 }
 
-Eigen::Matrix3d SE2::hat(const Eigen::Vector3d &xi) {
-    Eigen::Matrix3d x = Eigen::Matrix3d::Zero();
+SE2::AlgebraType SE2::hat(const VectorType &xi) {
+    AlgebraType x = AlgebraType::Zero();
     x.topLeftCorner<2, 2>() = SO2::hat(xi(2));
     x.topRightCorner<2, 1>() = xi.topRows<2>();
     return x;
 }
 
-Eigen::Vector3d SE2::vee(const Eigen::Matrix3d &x) {
-    Eigen::Vector3d xi;
+SE2::VectorType SE2::vee(const AlgebraType &x) {
+    VectorType xi;
     xi.topRows<2>() = x.topRightCorner<2, 1>();
     xi(2) = SO2::vee(x.topLeftCorner<2, 2>());
     return xi;
@@ -143,7 +145,7 @@ SE2 SE2::operator*(const SE2 &rhs) const {
     return SE2(C_ * rhs.C_, C_ * rhs.r_ + r_);
 }
 
-Eigen::Vector2d SE2::operator*(const Eigen::Vector2d &x) const {
+SE2::DomainType SE2::operator*(const DomainType &x) const {
     return C_ * x + r_;
 }
 
@@ -160,14 +162,14 @@ bool SE2::isIdentity() const {
     return C_.isIdentity() && r_.isZero();
 }
 
-Eigen::Matrix3d SE2::matrix() const {
-    Eigen::Matrix3d T = Eigen::Matrix3d::Identity();
+SE2::MatrixType SE2::matrix() const {
+    MatrixType T = MatrixType::Identity();
     T.topLeftCorner<2, 2>() = C_.matrix();
     T.topRightCorner<2, 1>() = r_;
     return T;
 }
 
-Eigen::Matrix3d SE2::ad(const Eigen::Vector3d &xi) {
+Eigen::Matrix3d SE2::ad(const VectorType &xi) {
     Eigen::Matrix3d ad_xi = Eigen::Matrix3d::Zero();
 
     ad_xi.topLeftCorner<2, 2>() = SO2::hat(xi(2));

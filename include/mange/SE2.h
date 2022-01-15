@@ -9,31 +9,42 @@ namespace mange {
 
 class SE2 {
    public:
+    static constexpr int DOF = 3;
+    static constexpr int DIM = 2;
+
+    using VectorType = Eigen::Matrix<double, DOF, 1>;
+    using MappingType = Eigen::Matrix<double, DOF, DOF>;
+    using AlgebraType = Eigen::Matrix<double, DOF, DOF>;
+    using MatrixType = Eigen::Matrix3d;
+    using DomainType = Eigen::Matrix<double, DIM, 1>;
+
     SE2();
-    SE2(const Eigen::Vector3d &xi);
-    SE2(const Eigen::Vector2d &translation, double rotation);
+    SE2(const VectorType &xi);
+    SE2(const SO2 &rotation);
+    SE2(const DomainType &translation);
+    SE2(const SO2 &rotation, const DomainType &translation);
 
     static SE2 Identity();
     static SE2 Random();
 
-    static SE2 Exp(const Eigen::Vector3d &xi);
-    static Eigen::Vector3d Log(const SE2 &X);
-    static Eigen::Matrix3d Ad(const SE2 &X);
-    static Eigen::Matrix3d Jl(const Eigen::Vector3d &xi);
-    static Eigen::Matrix3d Jr(const Eigen::Vector3d &xi);
-    static Eigen::Matrix3d JlInverse(const Eigen::Vector3d &xi);
-    static Eigen::Matrix3d JrInverse(const Eigen::Vector3d &xi);
+    static SE2 Exp(const VectorType &xi);
+    static VectorType Log(const SE2 &X);
+    static MappingType Ad(const SE2 &X);
+    static MappingType Jl(const VectorType &xi);
+    static MappingType Jr(const VectorType &xi);
+    static MappingType JlInverse(const VectorType &xi);
+    static MappingType JrInverse(const VectorType &xi);
 
-    static Eigen::Matrix3d hat(const Eigen::Vector3d &xi);
-    static Eigen::Vector3d vee(const Eigen::Matrix3d &x);
+    static AlgebraType hat(const VectorType &xi);
+    static VectorType vee(const AlgebraType &x);
 
-    Eigen::Vector3d Log() const { return Log(*this); }
-    Eigen::Matrix3d Ad() const { return Ad(*this); }
+    VectorType Log() const { return Log(*this); }
+    MappingType Ad() const { return Ad(*this); }
 
     SE2 inverse() const;
 
     SE2 operator*(const SE2 &rhs) const;
-    Eigen::Vector2d operator*(const Eigen::Vector2d &x) const;
+    DomainType operator*(const DomainType &x) const;
 
     void setIdentity();
     //! @todo void normalize();
@@ -41,7 +52,7 @@ class SE2 {
     bool isApprox(const SE2 &other) const;
     bool isIdentity() const;
 
-    Eigen::Matrix3d matrix() const;
+    MatrixType matrix() const;
 
     // SE(2) specific methods
     const SO2 &C() const { return C_; }
@@ -50,7 +61,6 @@ class SE2 {
    private:
     static constexpr double EPSILON = 1e-12;
 
-    SE2(const SO2 &C, const Eigen::Vector2d &r);
     static Eigen::Matrix3d ad(const Eigen::Vector3d &xi);
 
     SO2 C_;
