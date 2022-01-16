@@ -9,31 +9,6 @@
 #include "mange/SO2.h"
 
 //==============================================================================
-// type definitions
-//==============================================================================
-
-// This struct defines three types associated with a group Lie group:
-//   Vector: the type of the vector space isomorphic to the Lie algebra
-//   Algebra: the type of the Lie algebra
-//   Domain: the type of the domain group action (e.g. rotation or translation of vectors)
-template <typename Group>
-struct TypeDefs;
-
-template <>
-struct TypeDefs<mange::SO2> {
-    typedef double Vector;
-    typedef Eigen::Matrix2d Algebra;
-    typedef Eigen::Vector2d Domain;
-};
-
-template <>
-struct TypeDefs<mange::SE2> {
-    typedef Eigen::Vector3d Vector;
-    typedef Eigen::Matrix3d Algebra;
-    typedef Eigen::Vector2d Domain;
-};
-
-//==============================================================================
 // helper functions
 //==============================================================================
 
@@ -129,8 +104,8 @@ double wrap_angle(double angle) {
 }
 
 template <typename Group>
-::testing::AssertionResult tangentVectorsEqual(const typename TypeDefs<Group>::Vector &log_x,
-                                               const typename TypeDefs<Group>::Vector &original_x);
+::testing::AssertionResult tangentVectorsEqual(const typename Group::VectorType &log_x,
+                                               const typename Group::VectorType &original_x);
 
 template <>
 ::testing::AssertionResult tangentVectorsEqual<mange::SO2>(
@@ -171,8 +146,8 @@ template <typename Domain>
 }
 
 template <typename Group>
-::testing::AssertionResult actionValid(const typename TypeDefs<Group>::Domain &after,
-                                       const typename TypeDefs<Group>::Domain &before) {
+::testing::AssertionResult actionValid(const typename Group::DomainType &after,
+                                       const typename Group::DomainType &before) {
     return ::testing::AssertionSuccess();  // no checks for SE(n)
 }
 
@@ -216,8 +191,8 @@ template <typename T>
 template <typename Group>
 class LieGroupTest : public ::testing::Test {
    protected:
-    using Vector = typename TypeDefs<Group>::Vector;
-    using Domain = typename TypeDefs<Group>::Domain;
+    using Vector = typename Group::VectorType;
+    using Domain = typename Group::DomainType;
 
     static constexpr size_t SIZE = 100;
 
@@ -322,7 +297,7 @@ TYPED_TEST(LieGroupTest, Adjoint) {
         const auto &X = this->random_X[i];
         const auto &x = this->random_x[i];
 
-        typename TypeDefs<TypeParam>::Vector Ad_x =
+        typename TypeParam::VectorType Ad_x =
             X.Ad() * x;  // assignment required to evaluate Eigen product expression down to matrix
                          // type for template matching
         ASSERT_TRUE(vectorsEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
