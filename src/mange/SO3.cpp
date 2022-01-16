@@ -82,10 +82,9 @@ SO3::MappingType SO3::JlInverse(VectorType phi) {
         a = 1 - std::pow(angle, 2) / 12 - std::pow(angle, 4) / 720;
     }
     b = 1 - a;
-    c = angle / 2;
+    c = -angle / 2;
 
-    //! @todo The sign on the last coefficient is negative of what I have in my notes...
-    return a * MappingType::Identity() + b * axis * axis.transpose() - c * hat(axis);
+    return a * MappingType::Identity() + b * axis * axis.transpose() + c * hat(axis);
 }
 
 SO3::MappingType SO3::JrInverse(VectorType phi) {
