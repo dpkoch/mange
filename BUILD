@@ -5,10 +5,12 @@ cc_library(
     srcs = [
         "src/mange/SE2.cpp",
         "src/mange/SO2.cpp",
+        "src/mange/SO3.cpp",
     ],
     hdrs = [
         "include/mange/SE2.h",
         "include/mange/SO2.h",
+        "include/mange/SO3.h",
         "include/mange/mange.h",
     ],
     strip_include_prefix = "include",

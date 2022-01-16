@@ -11,6 +11,7 @@ include_directories(
 add_library(${PROJECT_NAME}
     src/${PROJECT_NAME}/SO2.cpp
     src/${PROJECT_NAME}/SE2.cpp
+    src/${PROJECT_NAME}/SO3.cpp
 )
 
 include(GoogleTest)

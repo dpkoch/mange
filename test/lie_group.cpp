@@ -7,6 +7,7 @@
 
 #include "mange/SE2.h"
 #include "mange/SO2.h"
+#include "mange/SO3.h"
 
 //==============================================================================
 // helper functions
@@ -44,15 +45,18 @@ template <typename DerivedLhs, typename DerivedRhs>
 }
 
 // valid group member
+template <typename Derived>
+bool isSpecialOrthogonal(const Eigen::MatrixBase<Derived> &matrix) {
+    return (matrix * matrix.transpose()).isIdentity() &&
+           (matrix.transpose() * matrix).isIdentity() && doubleEqual(matrix.determinant(), 1.0);
+}
+
 template <typename Group>
 bool isValidGroupMember(const Group &X) = delete;
 
 template <>
 bool isValidGroupMember(const mange::SO2 &X) {
-    // should be orthogonal matrix with determinant 1
-    return (X.matrix() * X.matrix().transpose()).isIdentity() &&
-           (X.matrix().transpose() * X.matrix()).isIdentity() &&
-           doubleEqual(X.matrix().determinant(), 1.0);
+    return isSpecialOrthogonal(X.matrix());
 }
 
 template <>
@@ -62,6 +66,11 @@ bool isValidGroupMember(const mange::SE2 &X) {
     mange::SE2::MatrixType T = X.matrix();
     return isValidGroupMember(X.C()) && T.topLeftCorner<2, 2>().isApprox(X.C().matrix()) &&
            T(2, 0) == 0.0 && T(2, 1) == 0.0 && T(2, 2) == 1.0;
+}
+
+template <>
+bool isValidGroupMember(const mange::SO3 &X) {
+    return isSpecialOrthogonal(X.matrix());
 }
 
 // identity element
@@ -76,6 +85,11 @@ bool isIdentityElement(const mange::SO2 &X) {
 template <>
 bool isIdentityElement(const mange::SE2 &X) {
     return isIdentityElement(X.C()) && X.r().isZero();
+}
+
+template <>
+bool isIdentityElement(const mange::SO3 &X) {
+    return X.matrix().isIdentity();
 }
 
 // random vectors
@@ -124,6 +138,10 @@ double wrap_angle(double angle) {
     return angle + (add - subtract) * 2 * M_PI;
 }
 
+mange::SO3::VectorType wrap_angle(const mange::SO3::VectorType &phi) {
+    return wrap_angle(phi.norm()) * phi.normalized();
+}
+
 template <typename Group>
 ::testing::AssertionResult tangentVectorsEqual(const typename Group::VectorType &log_x,
                                                const typename Group::VectorType &original_x);
@@ -155,6 +173,19 @@ template <>
                << "log: " << log_x << ", constrained: " << constrained_x;
 }
 
+template <>
+::testing::AssertionResult tangentVectorsEqual<mange::SO3>(
+    const mange::SO3::VectorType &log_x, const mange::SO3::VectorType &original_x) {
+
+    mange::SO3::VectorType constrained_x = wrap_angle(original_x);
+
+    if (nearlyEqual(log_x, constrained_x, 1e-10))
+        return ::testing::AssertionSuccess();
+    else
+        return ::testing::AssertionFailure()
+               << "log: " << log_x << ", constrained: " << constrained_x;
+}
+
 // check that group action satisfies any constraints
 
 template <typename Domain>
@@ -175,6 +206,12 @@ template <typename Group>
 template <>
 ::testing::AssertionResult actionValid<mange::SO2>(const mange::SO2::DomainType &after,
                                                    const mange::SO2::DomainType &before) {
+    return normEqual(after, before);
+}
+
+template <>
+::testing::AssertionResult actionValid<mange::SO3>(const mange::SO3::DomainType &after,
+                                                   const mange::SO3::DomainType &before) {
     return normEqual(after, before);
 }
 
@@ -234,7 +271,7 @@ class LieGroupTest : public ::testing::Test {
 // test cases
 //==============================================================================
 
-using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2>;
+using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2, mange::SO3>;
 TYPED_TEST_SUITE(LieGroupTest, LieGroupTypes);
 
 TYPED_TEST(LieGroupTest, IdentityValue) {
