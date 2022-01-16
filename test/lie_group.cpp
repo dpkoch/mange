@@ -18,8 +18,29 @@ bool doubleEqual(double lhs, double rhs) {
 }
 
 bool doubleNear(double lhs, double rhs, double epsilon = std::numeric_limits<double>::epsilon()) {
-    return std::abs(lhs - rhs) <=
-           (std::abs(lhs) > std::abs(rhs) ? std::abs(lhs) : std::abs(rhs)) * epsilon;
+    return std::abs(lhs - rhs) <= std::max(std::abs(rhs), std::abs(lhs)) * epsilon;
+}
+
+template <typename DerivedLhs, typename DerivedRhs>
+::testing::AssertionResult nearlyEqual(const Eigen::MatrixBase<DerivedLhs> &lhs,
+                                       const Eigen::MatrixBase<DerivedRhs> &rhs,
+                                       double epsilon = 1e-12) {
+    if (lhs.isApprox(rhs))
+        return ::testing::AssertionSuccess();
+    else {
+        return ::testing::AssertionFailure() << "lhs:" << std::endl
+                                             << lhs << std::endl
+                                             << "rhs:" << std::endl
+                                             << rhs;
+    }
+}
+
+::testing::AssertionResult nearlyEqual(double lhs, double rhs, double epsilon = 1e-12) {
+    if (doubleNear(lhs, rhs, epsilon))
+        return ::testing::AssertionSuccess();
+    else {
+        return ::testing::AssertionFailure() << "lhs: " << lhs << std::endl << "rhs: " << rhs;
+    }
 }
 
 // valid group member
@@ -38,7 +59,7 @@ template <>
 bool isValidGroupMember(const mange::SE2 &X) {
     // this tests that the rotation component is valid, and also that the matrix
     // representation returned is proper
-    Eigen::Matrix3d T = X.matrix();
+    mange::SE2::MatrixType T = X.matrix();
     return isValidGroupMember(X.C()) && T.topLeftCorner<2, 2>().isApprox(X.C().matrix()) &&
            T(2, 0) == 0.0 && T(2, 1) == 0.0 && T(2, 2) == 1.0;
 }
@@ -93,14 +114,14 @@ bool vectorsEqual(double actual, double expect) {
 
 double wrap_angle(double angle) {
     // add/subtract multiples of 2pi all in one step, as opposed to sequentially, to reduce error
-    size_t add = 0;
-    size_t subtract = 0;
+    int add = 0;
+    int subtract = 0;
 
     while (angle - subtract * 2 * M_PI > M_PI) ++subtract;
 
     while (angle + add * 2 * M_PI < -M_PI) ++add;
 
-    return angle + add * 2 * M_PI - subtract * 2 * M_PI;
+    return angle + (add - subtract) * 2 * M_PI;
 }
 
 template <typename Group>
@@ -122,9 +143,9 @@ template <>
 }
 
 template <>
-::testing::AssertionResult tangentVectorsEqual<mange::SE2>(const Eigen::Vector3d &log_x,
-                                                           const Eigen::Vector3d &original_x) {
-    Eigen::Vector3d constrained_x;
+::testing::AssertionResult tangentVectorsEqual<mange::SE2>(
+    const mange::SE2::VectorType &log_x, const mange::SE2::VectorType &original_x) {
+    mange::SE2::VectorType constrained_x;
     constrained_x << original_x(0), original_x(1), wrap_angle(original_x(2));
 
     if (original_x.isApprox(log_x))
@@ -152,8 +173,8 @@ template <typename Group>
 }
 
 template <>
-::testing::AssertionResult actionValid<mange::SO2>(const Eigen::Vector2d &after,
-                                                   const Eigen::Vector2d &before) {
+::testing::AssertionResult actionValid<mange::SO2>(const mange::SO2::DomainType &after,
+                                                   const mange::SO2::DomainType &before) {
     return normEqual(after, before);
 }
 
@@ -227,9 +248,9 @@ TYPED_TEST(LieGroupTest, DefaultValue) {
 TYPED_TEST(LieGroupTest, Exp) {
     for (const auto &x : this->random_x) {
         TypeParam X = TypeParam::Exp(x);
-        ASSERT_TRUE(isValidGroupMember(X));
         ASSERT_FALSE(
             X.isIdentity());  //!< @todo Could fail if we happen to get a random zero element!
+        ASSERT_TRUE(isValidGroupMember(X));
     }
 }
 
@@ -266,11 +287,11 @@ TYPED_TEST(LieGroupTest, Associativity) {
 }
 
 TYPED_TEST(LieGroupTest, HatVeeInverseMappings) {
-    constexpr auto hat = &TypeParam::hat;
-    constexpr auto vee = &TypeParam::vee;
+    // using TypeParam::typename hat;
+    // using TypeParam::typename vee;
 
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(vectorsEqual(vee(hat(x)), x));
+        ASSERT_TRUE(vectorsEqual(TypeParam::vee(TypeParam::hat(x)), x));
     }
 
     //! @todo test hat(vee(x)) direction (would require having log() -> Algebra function)
@@ -316,6 +337,13 @@ TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
     for (const auto &x : this->random_x) {
         ASSERT_TRUE(jacobianAndInverse(TypeParam::Jl(x), TypeParam::JlInverse(x)));
         ASSERT_TRUE(jacobianAndInverse(TypeParam::Jr(x), TypeParam::JrInverse(x)));
+    }
+}
+
+TYPED_TEST(LieGroupTest, AdjointAndJacobians) {
+    for (const auto &x : this->random_x) {
+        const TypeParam X = TypeParam::Exp(x);
+        ASSERT_TRUE(nearlyEqual(X.Ad(), TypeParam::Jl(x) * TypeParam::JrInverse(x)));
     }
 }
 
