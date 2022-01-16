@@ -214,8 +214,7 @@ class LieGroupTest : public ::testing::Test {
 //==============================================================================
 
 using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2>;
-TYPED_TEST_CASE(LieGroupTest, LieGroupTypes);  //!< @note TYPED_TEST_CASE will be replace by
-                                               //!< TYPED_TEST_SUITE in googletest v1.10.x
+TYPED_TEST_SUITE(LieGroupTest, LieGroupTypes);
 
 TYPED_TEST(LieGroupTest, IdentityValue) {
     ASSERT_TRUE(isIdentityElement(TypeParam::Identity()));
