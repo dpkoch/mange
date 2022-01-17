@@ -2,6 +2,7 @@
 #define MANGE_MANGE_H
 
 #include "mange/SE2.h"
+#include "mange/SE3.h"
 #include "mange/SO2.h"
 #include "mange/SO3.h"
 

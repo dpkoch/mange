@@ -6,6 +6,7 @@
 #include <gtest/gtest.h>
 
 #include "mange/SE2.h"
+#include "mange/SE3.h"
 #include "mange/SO2.h"
 #include "mange/SO3.h"
 
@@ -73,6 +74,15 @@ bool isValidGroupMember(const mange::SO3 &X) {
     return isSpecialOrthogonal(X.matrix());
 }
 
+template <>
+bool isValidGroupMember(const mange::SE3 &X) {
+    // this tests that the rotation component is valid, and also that the matrix
+    // representation returned is proper
+    mange::SE3::MatrixType T = X.matrix();
+    return isValidGroupMember(X.C()) && T.topLeftCorner<3, 3>().isApprox(X.C().matrix()) &&
+           T.bottomLeftCorner<1, 3>().isZero() && T(3, 3) == 1.0;
+}
+
 // identity element
 template <typename Group>
 bool isIdentityElement(const Group &X) = delete;
@@ -90,6 +100,11 @@ bool isIdentityElement(const mange::SE2 &X) {
 template <>
 bool isIdentityElement(const mange::SO3 &X) {
     return X.matrix().isIdentity();
+}
+
+template <>
+bool isIdentityElement(const mange::SE3 &X) {
+    return isIdentityElement(X.C()) && X.r().isZero();
 }
 
 // random vectors
@@ -186,6 +201,19 @@ template <>
                << "log: " << log_x << ", constrained: " << constrained_x;
 }
 
+template <>
+::testing::AssertionResult tangentVectorsEqual<mange::SE3>(
+    const mange::SE3::VectorType &log_x, const mange::SE3::VectorType &original_x) {
+    mange::SE3::VectorType constrained_x = original_x;
+    mange::SE3::angular_part(constrained_x) = wrap_angle(mange::SE3::angular_part(original_x));
+
+    if (original_x.isApprox(log_x))
+        return ::testing::AssertionSuccess();
+    else
+        return ::testing::AssertionFailure()
+               << "log: " << log_x << ", constrained: " << constrained_x;
+}
+
 // check that group action satisfies any constraints
 
 template <typename Domain>
@@ -271,7 +299,7 @@ class LieGroupTest : public ::testing::Test {
 // test cases
 //==============================================================================
 
-using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2, mange::SO3>;
+using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2, mange::SO3, mange::SE3>;
 TYPED_TEST_SUITE(LieGroupTest, LieGroupTypes);
 
 TYPED_TEST(LieGroupTest, IdentityValue) {
