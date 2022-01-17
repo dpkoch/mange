@@ -27,6 +27,30 @@ class SE2 {
     static SE2 Identity();
     static SE2 Random();
 
+    template <typename Derived>
+    static SO2::VectorType &angular_part(Eigen::MatrixBase<Derived> &vector) {
+        EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, DOF);
+        return vector(2);
+    }
+    template <typename Derived>
+    static const SO2::VectorType angular_part(const Eigen::MatrixBase<Derived> &vector) {
+        EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, DOF);
+        return vector(2);
+    }
+
+    template <typename Derived>
+    static Eigen::VectorBlock<Derived, DOF - SO2::DOF> linear_part(
+        Eigen::MatrixBase<Derived> &vector) {
+        EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, DOF);
+        return vector.template head<DOF - SO2::DOF>();
+    }
+    template <typename Derived>
+    static const Eigen::VectorBlock<const Derived, DOF - SO2::DOF> linear_part(
+        const Eigen::MatrixBase<Derived> &vector) {
+        EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, DOF);
+        return vector.template head<DOF - SO2::DOF>();
+    }
+
     static SE2 Exp(const VectorType &xi);
     static VectorType Log(const SE2 &X);
     static MappingType Ad(const SE2 &X);
@@ -56,15 +80,15 @@ class SE2 {
 
     // SE(2) specific methods
     const SO2 &C() const { return C_; }
-    const Eigen::Vector2d &r() const { return r_; }
+    const DomainType &r() const { return r_; }
 
    private:
     static constexpr double EPSILON = 1e-12;
 
-    static Eigen::Matrix3d ad(const Eigen::Vector3d &xi);
+    static MappingType ad(const VectorType &xi);
 
     SO2 C_;
-    Eigen::Vector2d r_;
+    DomainType r_;
 };
 
 }  // namespace mange

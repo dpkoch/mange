@@ -2,7 +2,7 @@
 
 namespace mange {
 
-SE2::SE2() : r_(Eigen::Vector2d::Zero()) {}
+SE2::SE2() : r_(DomainType::Zero()) {}
 
 SE2::SE2(const VectorType &xi) {
     *this = Exp(xi);
@@ -25,7 +25,7 @@ SE2 SE2::Random() {
 SE2 SE2::Exp(const VectorType &xi) {
     SE2 result;
 
-    const SO2::VectorType phi = xi(2);
+    const SO2::VectorType phi = angular_part(xi);
     result.C_ = SO2(phi);
 
     double a, b;
@@ -38,7 +38,7 @@ SE2 SE2::Exp(const VectorType &xi) {
         b = phi / 2.0 - std::pow(phi, 3) / 24.0;
     }
     const Eigen::Matrix2d V = (a * Eigen::Matrix2d::Identity() + b * SO2::hat(1.0));
-    result.r_ = V * xi.topRows<2>();
+    result.r_ = V * linear_part(xi);
 
     return result;
 }
@@ -47,7 +47,7 @@ SE2::VectorType SE2::Log(const SE2 &X) {
     const SO2::VectorType phi = X.C_.Log();
 
     VectorType xi;
-    xi(2) = phi;
+    angular_part(xi) = phi;
 
     double a, b;
     if (std::abs(phi) > EPSILON) {
@@ -60,7 +60,7 @@ SE2::VectorType SE2::Log(const SE2 &X) {
     }
     const Eigen::Matrix2d Vinv =
         1.0 / (a * a + b * b) * (a * Eigen::Matrix2d::Identity() - b * SO2::hat(1.0));
-    xi.topRows<2>() = Vinv * X.r_;
+    linear_part(xi) = Vinv * X.r_;
 
     return xi;
 }
@@ -74,7 +74,7 @@ SE2::MappingType SE2::Ad(const SE2 &X) {
 }
 
 SE2::MappingType SE2::Jl(const VectorType &xi) {
-    const SO2::VectorType phi = xi(2);
+    const SO2::VectorType phi = angular_part(xi);
     double alpha1, alpha2;  // coefficients for ξ⋏ and (ξ⋏)²
 
     // use exact coefficients if |φ|<ε
@@ -102,7 +102,7 @@ SE2::MappingType SE2::Jr(const VectorType &xi) {
 }
 
 SE2::MappingType SE2::JlInverse(const VectorType &xi) {
-    const SO2::VectorType phi = xi(2);
+    const SO2::VectorType phi = angular_part(xi);
     double alpha;  // coefficient for (ξ⋏)²
 
     // use exact expression if |φ| > ε, and φ is not an integer multiple of 2π
@@ -125,15 +125,15 @@ SE2::MappingType SE2::JrInverse(const VectorType &xi) {
 
 SE2::AlgebraType SE2::hat(const VectorType &xi) {
     AlgebraType x = AlgebraType::Zero();
-    x.topLeftCorner<2, 2>() = SO2::hat(xi(2));
-    x.topRightCorner<2, 1>() = xi.topRows<2>();
+    x.topLeftCorner<2, 2>() = SO2::hat(angular_part(xi));
+    x.topRightCorner<2, 1>() = linear_part(xi);
     return x;
 }
 
 SE2::VectorType SE2::vee(const AlgebraType &x) {
     VectorType xi;
-    xi.topRows<2>() = x.topRightCorner<2, 1>();
-    xi(2) = SO2::vee(x.topLeftCorner<2, 2>());
+    linear_part(xi) = x.topRightCorner<2, 1>();
+    angular_part(xi) = SO2::vee(x.topLeftCorner<2, 2>());
     return xi;
 }
 
@@ -169,10 +169,10 @@ SE2::MatrixType SE2::matrix() const {
     return T;
 }
 
-Eigen::Matrix3d SE2::ad(const VectorType &xi) {
-    Eigen::Matrix3d ad_xi = Eigen::Matrix3d::Zero();
+SE2::MappingType SE2::ad(const VectorType &xi) {
+    MappingType ad_xi = MappingType::Zero();
 
-    ad_xi.topLeftCorner<2, 2>() = SO2::hat(xi(2));
+    ad_xi.topLeftCorner<2, 2>() = SO2::hat(angular_part(xi));
     ad_xi(0, 2) = xi(1);
     ad_xi(1, 2) = -xi(0);
 
