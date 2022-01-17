@@ -43,41 +43,72 @@ template <typename DerivedLhs, typename DerivedRhs>
 }
 
 // valid group member
-template <typename Derived>
-bool isSpecialOrthogonal(const Eigen::MatrixBase<Derived> &matrix) {
-    return (matrix * matrix.transpose()).isIdentity() &&
-           (matrix.transpose() * matrix).isIdentity() && doubleEqual(matrix.determinant(), 1.0);
+template <typename Group>
+::testing::AssertionResult isValidSOnElement(const Group &X) {
+    const auto &matrix = X.matrix();
+
+    if (!(matrix * matrix.transpose()).isIdentity()) {
+        return ::testing::AssertionFailure() << "C * C^T is not identity: " << std::endl
+                                             << matrix * matrix.transpose();
+    }
+    if (!(matrix.transpose() * matrix).isIdentity()) {
+        return ::testing::AssertionFailure() << "C^T * C is not identity: " << std::endl
+                                             << matrix.transpose() * matrix;
+    }
+    if (!doubleEqual(matrix.determinant(), 1.0)) {
+        return ::testing::AssertionFailure() << "Determinant is not 1: " << matrix.determinant();
+    }
+
+    return ::testing::AssertionSuccess();
 }
 
 template <typename Group>
-bool isValidGroupMember(const Group &X) = delete;
+::testing::AssertionResult isValidSEnElement(const Group &X) {
+    ::testing::AssertionResult rotation_result = isValidSOnElement(X.C());
+    if (!rotation_result) return rotation_result;
+
+    const auto matrix = X.matrix();
+    if (!matrix.template topLeftCorner<Group::DIM, Group::DIM>().isApprox(X.C().matrix())) {
+        return ::testing::AssertionFailure()
+               << "Top left corner not equal to rotation matrix" << std::endl
+               << "Top left corner:" << std::endl
+               << matrix.template topLeftCorner<Group::DIM, Group::DIM>() << std::endl
+               << "Rotation matrix:" << std::endl
+               << X.C().matrix();
+    }
+    if (!matrix.template bottomLeftCorner<1, Group::DIM>().isZero()) {
+        return ::testing::AssertionFailure() << "Bottom left corner is not zero:" << std::endl
+                                             << matrix.template bottomLeftCorner<1, Group::DIM>();
+    }
+    if (!(matrix.template bottomRightCorner<1, 1>()(0, 0) == 1.0)) {
+        return ::testing::AssertionFailure() << "Bottom right corner is not 1: "
+                                             << matrix.template bottomRightCorner<1, 1>()(0, 0);
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
+template <typename Group>
+::testing::AssertionResult isValidGroupMember(const Group &X) = delete;
 
 template <>
-bool isValidGroupMember(const mange::SO2 &X) {
-    return isSpecialOrthogonal(X.matrix());
+::testing::AssertionResult isValidGroupMember(const mange::SO2 &X) {
+    return isValidSOnElement(X);
 }
 
 template <>
-bool isValidGroupMember(const mange::SE2 &X) {
-    // this tests that the rotation component is valid, and also that the matrix
-    // representation returned is proper
-    mange::SE2::MatrixType T = X.matrix();
-    return isValidGroupMember(X.C()) && T.topLeftCorner<2, 2>().isApprox(X.C().matrix()) &&
-           T(2, 0) == 0.0 && T(2, 1) == 0.0 && T(2, 2) == 1.0;
+::testing::AssertionResult isValidGroupMember(const mange::SO3 &X) {
+    return isValidSOnElement(X);
 }
 
 template <>
-bool isValidGroupMember(const mange::SO3 &X) {
-    return isSpecialOrthogonal(X.matrix());
+::testing::AssertionResult isValidGroupMember(const mange::SE2 &X) {
+    return isValidSEnElement(X);
 }
 
 template <>
-bool isValidGroupMember(const mange::SE3 &X) {
-    // this tests that the rotation component is valid, and also that the matrix
-    // representation returned is proper
-    mange::SE3::MatrixType T = X.matrix();
-    return isValidGroupMember(X.C()) && T.topLeftCorner<3, 3>().isApprox(X.C().matrix()) &&
-           T.bottomLeftCorner<1, 3>().isZero() && T(3, 3) == 1.0;
+::testing::AssertionResult isValidGroupMember(const mange::SE3 &X) {
+    return isValidSEnElement(X);
 }
 
 // identity element
@@ -168,8 +199,9 @@ template <>
     if (doubleNear(log_x, constrained_x, 1e-10))
         return ::testing::AssertionSuccess();
     else
-        return ::testing::AssertionFailure()
-               << "log: " << log_x << ", constrained: " << constrained_x;
+        return ::testing::AssertionFailure() << "log: " << std::endl
+                                             << log_x << ", constrained: " << std::endl
+                                             << constrained_x;
 }
 
 template <>
@@ -181,8 +213,9 @@ template <>
     if (original_x.isApprox(log_x))
         return ::testing::AssertionSuccess();
     else
-        return ::testing::AssertionFailure()
-               << "log: " << log_x << ", constrained: " << constrained_x;
+        return ::testing::AssertionFailure() << "log: " << std::endl
+                                             << log_x << ", constrained: " << std::endl
+                                             << constrained_x;
 }
 
 template <>
