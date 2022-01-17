@@ -1,4 +1,4 @@
-#include "mange/SE2.h"
+#include "mange/SE2.hh"
 
 namespace mange {
 

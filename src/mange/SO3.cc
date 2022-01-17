@@ -1,4 +1,4 @@
-#include "mange/SO3.h"
+#include "mange/SO3.hh"
 
 #include <cmath>
 

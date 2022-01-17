@@ -1,4 +1,4 @@
-#include "mange/SE3.h"
+#include "mange/SE3.hh"
 
 namespace mange {
 

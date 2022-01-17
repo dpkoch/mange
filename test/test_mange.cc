@@ -5,10 +5,7 @@
 #include <eigen3/Eigen/Dense>
 #include <gtest/gtest.h>
 
-#include "mange/SE2.h"
-#include "mange/SE3.h"
-#include "mange/SO2.h"
-#include "mange/SO3.h"
+#include "mange/mange.hh"
 
 //==============================================================================
 // helper functions

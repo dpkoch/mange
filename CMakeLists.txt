@@ -9,17 +9,17 @@ include_directories(
 )
 
 add_library(${PROJECT_NAME}
-    src/${PROJECT_NAME}/SO2.cpp
-    src/${PROJECT_NAME}/SE2.cpp
-    src/${PROJECT_NAME}/SO3.cpp
-    src/${PROJECT_NAME}/SE3.cpp
+    src/${PROJECT_NAME}/SO2.cc
+    src/${PROJECT_NAME}/SE2.cc
+    src/${PROJECT_NAME}/SO3.cc
+    src/${PROJECT_NAME}/SE3.cc
 )
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 17)
 
 include(GoogleTest)
 find_package(GTest 1.10 REQUIRED)
 add_executable(${PROJECT_NAME}_test
-    test/lie_group.cpp
+    test/test_mange.cc
 )
 target_link_libraries(${PROJECT_NAME}_test
     ${PROJECT_NAME}

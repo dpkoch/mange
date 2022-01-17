@@ -1,4 +1,4 @@
-#include "mange/SO2.h"
+#include "mange/SO2.hh"
 
 #include <random>
 
