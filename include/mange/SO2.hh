@@ -1,5 +1,4 @@
-#ifndef MANGE_SO2_H
-#define MANGE_SO2_H
+#pragma once
 
 #include <eigen3/Eigen/Core>
 
@@ -59,5 +58,3 @@ class SO2 {
 };
 
 }  // namespace mange
-
-#endif  // MANGE_SO2_H

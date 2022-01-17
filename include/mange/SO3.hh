@@ -1,5 +1,4 @@
-#ifndef MANGE_SO3_H
-#define MANGE_SO3_H
+#pragma once
 
 #include <tuple>
 
@@ -60,5 +59,3 @@ class SO3 {
 };
 
 }  // namespace mange
-
-#endif  // MANGE_SO3_H

@@ -1,5 +1,4 @@
-#ifndef MANGE_SE2_H
-#define MANGE_SE2_H
+#pragma once
 
 #include <eigen3/Eigen/Core>
 
@@ -92,5 +91,3 @@ class SE2 {
 };
 
 }  // namespace mange
-
-#endif  // MANGE_SE2_H
