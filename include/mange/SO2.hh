@@ -16,7 +16,6 @@ class SO2 {
     using DomainType = Eigen::Matrix<double, DIM, 1>;
 
     SO2();
-    SO2(VectorType phi);
 
     static SO2 Identity();
     static SO2 Random();

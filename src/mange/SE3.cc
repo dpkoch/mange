@@ -4,10 +4,6 @@ namespace mange {
 
 SE3::SE3() : r_(DomainType::Zero()) {}
 
-SE3::SE3(const VectorType &xi) {
-    *this = Exp(xi);
-}
-
 SE3::SE3(const SO3 &rotation) : C_(rotation) {}
 
 SE3::SE3(const DomainType &translation) : r_(translation) {}

@@ -18,7 +18,6 @@ class SO3 {
     using DomainType = Eigen::Matrix<double, DIM, 1>;
 
     SO3();
-    SO3(VectorType phi);
 
     static SO3 Identity();
     static SO3 Random();

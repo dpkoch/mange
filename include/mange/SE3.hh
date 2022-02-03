@@ -18,7 +18,6 @@ class SE3 {
     using DomainType = Eigen::Matrix<double, DIM, 1>;
 
     SE3();
-    SE3(const VectorType &xi);
     SE3(const SO3 &rotation);
     SE3(const DomainType &translation);
     SE3(const SO3 &rotation, const DomainType &translation);

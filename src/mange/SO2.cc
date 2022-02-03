@@ -6,10 +6,6 @@ namespace mange {
 
 SO2::SO2() : C_(MatrixType::Identity()) {}
 
-SO2::SO2(VectorType phi) {
-    *this = Exp(phi);
-}
-
 SO2::SO2(const MatrixType &C) : C_(C) {}
 
 SO2 SO2::Identity() {
@@ -21,7 +17,7 @@ SO2 SO2::Random() {
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> dist(-100.0, 100.0);
 
-    return SO2(dist(gen));
+    return Exp(dist(gen));
 }
 
 SO2 SO2::Exp(VectorType phi) {

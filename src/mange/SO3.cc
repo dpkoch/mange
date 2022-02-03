@@ -6,10 +6,6 @@ namespace mange {
 
 SO3::SO3() : C_(MatrixType::Identity()) {}
 
-SO3::SO3(VectorType phi) {
-    *this = Exp(phi);
-}
-
 SO3::SO3(const MatrixType &C) : C_(C) {}
 
 SO3 SO3::Identity() {

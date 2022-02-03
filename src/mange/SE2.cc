@@ -4,10 +4,6 @@ namespace mange {
 
 SE2::SE2() : r_(DomainType::Zero()) {}
 
-SE2::SE2(const VectorType &xi) {
-    *this = Exp(xi);
-}
-
 SE2::SE2(const SO2 &rotation) : C_(rotation) {}
 
 SE2::SE2(const DomainType &translation) : r_(translation) {}
@@ -26,7 +22,7 @@ SE2 SE2::Exp(const VectorType &xi) {
     SE2 result;
 
     const SO2::VectorType phi = angular_part(xi);
-    result.C_ = SO2(phi);
+    result.C_ = SO2::Exp(phi);
 
     double a, b;
     if (std::abs(phi) > EPSILON) {
