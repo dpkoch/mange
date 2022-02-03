@@ -1,4 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
+load("@rules_python//python:defs.bzl", "py_test")
 
 cc_library(
     name = "mange",
@@ -27,5 +29,23 @@ cc_test(
     deps = [
         ":mange",
         "@googletest//:gtest_main",
+    ],
+)
+
+pybind_extension(
+    name = "mange_python",
+    srcs = ["src/mange_python/mange_python.cc"],
+    deps = [
+        ":mange",
+    ],
+)
+
+py_test(
+    name = "test_mange_python",
+    srcs = ["test/test_mange_python.py"],
+    data = [":mange_python.so"],
+    deps = [
+        "@pip//pypi__numpy",
+        "@pip//pypi__pytest",
     ],
 )
