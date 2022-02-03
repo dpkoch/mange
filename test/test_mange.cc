@@ -428,6 +428,15 @@ TYPED_TEST(LieGroupTest, Action) {
     }
 }
 
+TYPED_TEST(LieGroupTest, IdentityAction) {
+    const auto X = TypeParam::Identity();
+    for (size_t i = 0; i < TestFixture::SIZE; i++) {
+        const auto &v = this->random_domain[i];
+
+        ASSERT_TRUE(nearlyEqual(X * v, v));
+    }
+}
+
 TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
     for (const auto &x : this->random_x) {
         ASSERT_TRUE(jacobianAndInverse(TypeParam::Jl(x), TypeParam::JlInverse(x)));
