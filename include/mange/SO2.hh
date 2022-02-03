@@ -22,8 +22,6 @@ class SO2 {
     static SO2 Random();
 
     static SO2 Exp(VectorType phi);
-    static VectorType Log(const SO2 &X);
-    static MappingType Ad(const SO2 &X);
     static MappingType Jl(VectorType phi);
     static MappingType Jr(VectorType phi);
     static MappingType JlInverse(VectorType phi);
@@ -32,8 +30,8 @@ class SO2 {
     static AlgebraType hat(VectorType phi);
     static VectorType vee(const AlgebraType &x);
 
-    VectorType Log() const { return Log(*this); }
-    MappingType Ad() const { return Ad(*this); }
+    VectorType Log() const;
+    MappingType Ad() const;
 
     SO2 inverse() const;
 

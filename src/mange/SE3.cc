@@ -29,18 +29,18 @@ SE3 SE3::Exp(const VectorType &xi) {
     return result;
 }
 
-SE3::VectorType SE3::Log(const SE3 &X) {
+SE3::VectorType SE3::Log() const {
     VectorType result;
-    angular_part(result) = X.C_.Log();
-    linear_part(result) = SO3::JlInverse(angular_part(result)) * X.r_;
+    angular_part(result) = C_.Log();
+    linear_part(result) = SO3::JlInverse(angular_part(result)) * r_;
     return result;
 }
 
-SE3::MappingType SE3::Ad(const SE3 &X) {
+SE3::MappingType SE3::Ad() const {
     MappingType result = MappingType::Zero();
-    result.topLeftCorner<3, 3>() = X.C_.matrix();
-    result.bottomRightCorner<3, 3>() = X.C_.matrix();
-    result.topRightCorner<3, 3>() = SO3::hat(X.r_) * X.C_.matrix();
+    result.topLeftCorner<3, 3>() = C_.matrix();
+    result.bottomRightCorner<3, 3>() = C_.matrix();
+    result.topRightCorner<3, 3>() = SO3::hat(r_) * C_.matrix();
     return result;
 }
 

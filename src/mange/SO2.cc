@@ -30,11 +30,11 @@ SO2 SO2::Exp(VectorType phi) {
     return result;
 }
 
-SO2::VectorType SO2::Log(const SO2 &X) {
-    return std::atan2(X.C_(1, 0), X.C_(0, 0));
+SO2::VectorType SO2::Log() const {
+    return std::atan2(C_(1, 0), C_(0, 0));
 }
 
-SO2::MappingType SO2::Ad(const SO2 &X) {
+SO2::MappingType SO2::Ad() const {
     return 1.0;
 }
 

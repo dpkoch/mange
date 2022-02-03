@@ -24,8 +24,6 @@ class SO3 {
     static SO3 Random();
 
     static SO3 Exp(VectorType phi);
-    static VectorType Log(const SO3 &X);
-    static MappingType Ad(const SO3 &X);
     static MappingType Jl(VectorType phi);
     static MappingType Jr(VectorType phi);
     static MappingType JlInverse(VectorType phi);
@@ -34,8 +32,8 @@ class SO3 {
     static AlgebraType hat(VectorType phi);
     static VectorType vee(const AlgebraType &x);
 
-    VectorType Log() const { return Log(*this); }
-    MappingType Ad() const { return Ad(*this); }
+    VectorType Log() const;
+    MappingType Ad() const;
 
     SO3 inverse() const;
 

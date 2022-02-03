@@ -43,8 +43,8 @@ SE2 SE2::Exp(const VectorType &xi) {
     return result;
 }
 
-SE2::VectorType SE2::Log(const SE2 &X) {
-    const SO2::VectorType phi = X.C_.Log();
+SE2::VectorType SE2::Log() const {
+    const SO2::VectorType phi = C_.Log();
 
     VectorType xi;
     angular_part(xi) = phi;
@@ -60,16 +60,16 @@ SE2::VectorType SE2::Log(const SE2 &X) {
     }
     const Eigen::Matrix2d Vinv =
         1.0 / (a * a + b * b) * (a * Eigen::Matrix2d::Identity() - b * SO2::hat(1.0));
-    linear_part(xi) = Vinv * X.r_;
+    linear_part(xi) = Vinv * r_;
 
     return xi;
 }
 
-SE2::MappingType SE2::Ad(const SE2 &X) {
+SE2::MappingType SE2::Ad() const {
     MappingType Adj = MappingType::Identity();
-    Adj.topLeftCorner<2, 2>() = X.C_.matrix();
-    Adj(0, 2) = X.r_(1);
-    Adj(1, 2) = -X.r_(0);
+    Adj.topLeftCorner<2, 2>() = C_.matrix();
+    Adj(0, 2) = r_(1);
+    Adj(1, 2) = -r_(0);
     return Adj;
 }
 

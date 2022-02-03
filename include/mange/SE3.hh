@@ -52,8 +52,6 @@ class SE3 {
     }
 
     static SE3 Exp(const VectorType &xi);
-    static VectorType Log(const SE3 &X);
-    static MappingType Ad(const SE3 &X);
     static MappingType Jl(const VectorType &xi);
     static MappingType Jr(const VectorType &xi);
     static MappingType JlInverse(const VectorType &xi);
@@ -62,8 +60,8 @@ class SE3 {
     static AlgebraType hat(const VectorType &xi);
     static VectorType vee(const AlgebraType &x);
 
-    VectorType Log() const { return Log(*this); }
-    MappingType Ad() const { return Ad(*this); }
+    VectorType Log() const;
+    MappingType Ad() const;
 
     SE3 inverse() const;
 

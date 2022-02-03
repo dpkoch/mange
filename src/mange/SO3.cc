@@ -30,19 +30,19 @@ SO3 SO3::Exp(VectorType phi) {
                           (1.0 - std::cos(angle)) * axis_hat * axis_hat));
 }
 
-SO3::VectorType SO3::Log(const SO3 &X) {
-    if (X.isIdentity()) {
+SO3::VectorType SO3::Log() const {
+    if (isIdentity()) {
         return VectorType::Zero();
     }
 
-    const double scalar = (X.matrix().trace() - 1.0) / 2.0;
+    const double scalar = (matrix().trace() - 1.0) / 2.0;
     //! @todo This isn't stable very close to identity
     return std::acos(scalar) / (2.0 * std::sqrt(1.0 - scalar * scalar)) *
-           vee((X.matrix() - X.matrix().transpose()));
+           vee((matrix() - matrix().transpose()));
 }
 
-SO3::MappingType SO3::Ad(const SO3 &X) {
-    return X.C_;
+SO3::MappingType SO3::Ad() const {
+    return C_;
 }
 
 SO3::MappingType SO3::Jl(VectorType phi) {

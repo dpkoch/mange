@@ -51,8 +51,6 @@ class SE2 {
     }
 
     static SE2 Exp(const VectorType &xi);
-    static VectorType Log(const SE2 &X);
-    static MappingType Ad(const SE2 &X);
     static MappingType Jl(const VectorType &xi);
     static MappingType Jr(const VectorType &xi);
     static MappingType JlInverse(const VectorType &xi);
@@ -61,8 +59,8 @@ class SE2 {
     static AlgebraType hat(const VectorType &xi);
     static VectorType vee(const AlgebraType &x);
 
-    VectorType Log() const { return Log(*this); }
-    MappingType Ad() const { return Ad(*this); }
+    VectorType Log() const;
+    MappingType Ad() const;
 
     SE2 inverse() const;
 
