@@ -20,6 +20,20 @@ def test_exp(G):
 
 
 @pytest.mark.parametrize("G", GROUP_TYPES)
+def test_log(G):
+    if G == SO2:
+        assert isinstance(G.Random().Log(), float)
+    else:
+        assert G.Random().Log().shape == (G.DOF,)
+
+
+@pytest.mark.parametrize("G", GROUP_TYPES)
+def test_hat_vee_roundtrip(G):
+    vector = np.random.random(size=(G.DOF,))
+    assert np.all(G.vee(G.hat(vector)) == vector)
+
+
+@pytest.mark.parametrize("G", GROUP_TYPES)
 def test_self_multiply(G):
     assert isinstance(G.Random() * G.Random(), G)
 
