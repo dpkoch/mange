@@ -35,6 +35,7 @@ cc_test(
 pybind_extension(
     name = "mange_python",
     srcs = ["src/mange_python/mange_python.cc"],
+    visibility = ["//visibility:public"],
     deps = [
         ":mange",
     ],
