@@ -55,7 +55,7 @@ SO3::MappingType SO3::Jl(VectorType phi) {
     } else {
         b = std::pow(angle, 2) / 6 - std::pow(angle, 4) / 120;
         a = 1 - b;
-        c = -1 / angle + 1 + angle / 2 - std::pow(angle, 3) / 24;
+        c = angle / 2 - std::pow(angle, 3) / 24;
     }
 
     return a * MappingType::Identity() + b * axis * axis.transpose() + c * hat(axis);
