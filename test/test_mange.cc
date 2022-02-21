@@ -42,6 +42,25 @@ template <typename DerivedLhs, typename DerivedRhs>
     }
 }
 
+// check for NaN
+template <typename Derived>
+bool hasNaN(const Eigen::MatrixBase<Derived> &value) {
+    return value.hasNaN();
+}
+
+bool hasNaN(double value) {
+    return std::isnan(value);
+}
+
+template <typename Value>
+::testing::AssertionResult isNotNaN(const Value &value) {
+    if (hasNaN(value)) {
+        return ::testing::AssertionFailure() << "Value contains NaN: " << std::endl << value;
+    }
+
+    return ::testing::AssertionSuccess();
+}
+
 // valid group member
 template <typename Group>
 ::testing::AssertionResult isValidSOnElement(const Group &X) {
@@ -388,6 +407,7 @@ TYPED_TEST(LieGroupTest, DefaultValue) {
 TYPED_TEST(LieGroupTest, Exp) {
     for (const auto &x : this->random_x) {
         typename TypeParam::Group X = TypeParam::Group::Exp(x);
+        ASSERT_TRUE(isNotNaN(X.matrix()));
         ASSERT_TRUE(isValidGroupMember(X));
     }
 }
@@ -410,6 +430,7 @@ TYPED_TEST(LieGroupTest, Identity) {
 
 TYPED_TEST(LieGroupTest, Inverse) {
     for (const auto &X : this->random_X) {
+        ASSERT_TRUE(isNotNaN(X.inverse().matrix()));
         ASSERT_TRUE((X * X.inverse()).isIdentity());
         ASSERT_TRUE((X.inverse() * X).isIdentity());
     }
@@ -456,6 +477,7 @@ TYPED_TEST(LieGroupTest, Adjoint) {
         const auto &X = this->random_X[i];
         const auto &x = this->random_x[i];
 
+        ASSERT_TRUE(isNotNaN(X.Ad()));
         typename TypeParam::Group::VectorType Ad_x =
             X.Ad() * x;  // assignment required to evaluate Eigen product expression down to matrix
                          // type for template matching
@@ -483,6 +505,10 @@ TYPED_TEST(LieGroupTest, IdentityAction) {
 
 TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
     for (const auto &x : this->random_x) {
+        ASSERT_TRUE(isNotNaN(TypeParam::Group::Jl(x)));
+        ASSERT_TRUE(isNotNaN(TypeParam::Group::JlInverse(x)));
+        ASSERT_TRUE(isNotNaN(TypeParam::Group::Jr(x)));
+        ASSERT_TRUE(isNotNaN(TypeParam::Group::JrInverse(x)));
         ASSERT_TRUE(jacobianAndInverse(TypeParam::Group::Jl(x), TypeParam::Group::JlInverse(x)));
         ASSERT_TRUE(jacobianAndInverse(TypeParam::Group::Jr(x), TypeParam::Group::JrInverse(x)));
     }
