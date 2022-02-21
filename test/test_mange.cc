@@ -24,7 +24,7 @@ template <typename DerivedLhs, typename DerivedRhs>
 ::testing::AssertionResult nearlyEqual(const Eigen::MatrixBase<DerivedLhs> &lhs,
                                        const Eigen::MatrixBase<DerivedRhs> &rhs,
                                        double epsilon = 1e-12) {
-    if (lhs.isApprox(rhs))
+    if (lhs.isApprox(rhs, epsilon))
         return ::testing::AssertionSuccess();
     else {
         return ::testing::AssertionFailure() << "lhs:" << std::endl
@@ -183,16 +183,6 @@ double randomVector() {
 template <typename Domain>
 auto constexpr randomDomain = &randomVector<Domain>;
 
-// equality of vectors
-template <typename Vector>
-bool vectorsEqual(const Vector &actual, const Vector &expect) {
-    return actual.isApprox(expect);
-}
-
-bool vectorsEqual(double actual, double expect) {
-    return doubleEqual(actual, expect);
-}
-
 // compare constrained tangent space elements
 //   These functions are used to deal with the many-to-one property of the
 //   exponential mapping. As a result of this property Log(Exp(x)) will not
@@ -282,24 +272,32 @@ template <typename Domain>
         return ::testing::AssertionSuccess();
     else
         return ::testing::AssertionFailure()
-               << "after: " << after.norm() << ", before: " << before.norm();
+               << "norm after: " << after.norm() << ", norm before: " << before.norm();
 }
 
 template <typename Group>
 ::testing::AssertionResult actionValid(const typename Group::DomainType &after,
                                        const typename Group::DomainType &before) {
-    return ::testing::AssertionSuccess();  // no checks for SE(n)
+    return isNotNaN(after);  // no specific checks for SE(n)
 }
 
 template <>
 ::testing::AssertionResult actionValid<mange::SO2>(const mange::SO2::DomainType &after,
                                                    const mange::SO2::DomainType &before) {
+    auto nan_result = isNotNaN(after);
+    if (!nan_result) {
+        return nan_result;
+    }
     return normEqual(after, before);
 }
 
 template <>
 ::testing::AssertionResult actionValid<mange::SO3>(const mange::SO3::DomainType &after,
                                                    const mange::SO3::DomainType &before) {
+    auto nan_result = isNotNaN(after);
+    if (!nan_result) {
+        return nan_result;
+    }
     return normEqual(after, before);
 }
 
@@ -351,8 +349,6 @@ class LieGroupTest : public ::testing::Test {
     using Vector = typename Group::VectorType;
     using Domain = typename Group::DomainType;
 
-    static constexpr size_t SIZE = 100;
-
     std::vector<Group> random_X;
     std::vector<Vector> random_x;
     std::vector<Domain> random_domain;
@@ -367,8 +363,13 @@ class LieGroupTest : public ::testing::Test {
                 random_X.push_back(Group::Identity());
                 random_x.push_back(zero_vector<Vector>());
                 random_domain.push_back(Domain::Ones());
+
+                random_X.push_back(Group::Identity());
+                random_x.push_back(zero_vector<Vector>());
+                random_domain.push_back(-Domain::Ones());
                 break;
             case DataSet::RANDOM:
+                static constexpr size_t SIZE = 100;
                 random_X.reserve(SIZE);
                 random_x.reserve(SIZE);
                 random_domain.reserve(SIZE);
@@ -412,6 +413,20 @@ TYPED_TEST(LieGroupTest, Exp) {
     }
 }
 
+TYPED_TEST(LieGroupTest, ExpOfZeroIsIdentity) {
+    typename TypeParam::Group X =
+        TypeParam::Group::Exp(zero_vector<typename TypeParam::Group::VectorType>());
+    ASSERT_TRUE(isNotNaN(X.matrix()));
+    ASSERT_TRUE(isIdentityElement(X));
+}
+
+TYPED_TEST(LieGroupTest, LogOfIdentityIsZero) {
+    typename TypeParam::Group::VectorType x = TypeParam::Group::Identity().Log();
+
+    ASSERT_TRUE(isNotNaN(x));
+    ASSERT_TRUE(nearlyEqual(x, zero_vector<typename TypeParam::Group::VectorType>()));
+}
+
 TYPED_TEST(LieGroupTest, Closure) {
     for (size_t i = 0; i < this->random_X.size(); i++) {
         typename TypeParam::Group X =
@@ -437,6 +452,7 @@ TYPED_TEST(LieGroupTest, Inverse) {
 }
 
 TYPED_TEST(LieGroupTest, Associativity) {
+    ASSERT_GT(this->random_X.size(), 2);
     for (size_t i = 0; i < this->random_X.size() - 2; i++) {
         const auto &A = this->random_X[i];
         const auto &B = this->random_X[i + 1];
@@ -451,7 +467,7 @@ TYPED_TEST(LieGroupTest, HatVeeInverseMappings) {
     // using TypeParam::Group::typename vee;
 
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(vectorsEqual(TypeParam::Group::vee(TypeParam::Group::hat(x)), x));
+        ASSERT_TRUE(nearlyEqual(TypeParam::Group::vee(TypeParam::Group::hat(x)), x));
     }
 
     //! @todo test hat(vee(x)) direction (would require having log() -> Algebra function)
@@ -473,7 +489,7 @@ TYPED_TEST(LieGroupTest, Adjoint) {
     constexpr auto hat = &TypeParam::Group::hat;
     constexpr auto vee = &TypeParam::Group::vee;
 
-    for (size_t i = 0; i < TestFixture::SIZE; i++) {
+    for (size_t i = 0; i < this->random_X.size(); i++) {
         const auto &X = this->random_X[i];
         const auto &x = this->random_x[i];
 
@@ -481,12 +497,12 @@ TYPED_TEST(LieGroupTest, Adjoint) {
         typename TypeParam::Group::VectorType Ad_x =
             X.Ad() * x;  // assignment required to evaluate Eigen product expression down to matrix
                          // type for template matching
-        ASSERT_TRUE(vectorsEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
+        ASSERT_TRUE(nearlyEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
     }
 }
 
 TYPED_TEST(LieGroupTest, Action) {
-    for (size_t i = 0; i < TestFixture::SIZE; i++) {
+    for (size_t i = 0; i < this->random_X.size(); i++) {
         const auto &X = this->random_X[i];
         const auto &v = this->random_domain[i];
 
@@ -496,9 +512,7 @@ TYPED_TEST(LieGroupTest, Action) {
 
 TYPED_TEST(LieGroupTest, IdentityAction) {
     const auto X = TypeParam::Group::Identity();
-    for (size_t i = 0; i < TestFixture::SIZE; i++) {
-        const auto &v = this->random_domain[i];
-
+    for (const auto &v : this->random_domain) {
         ASSERT_TRUE(nearlyEqual(X * v, v));
     }
 }
@@ -517,7 +531,8 @@ TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
 TYPED_TEST(LieGroupTest, AdjointAndJacobians) {
     for (const auto &x : this->random_x) {
         const typename TypeParam::Group X = TypeParam::Group::Exp(x);
-        ASSERT_TRUE(nearlyEqual(X.Ad(), TypeParam::Group::Jl(x) * TypeParam::Group::JrInverse(x)));
+        ASSERT_TRUE(
+            nearlyEqual(X.Ad(), TypeParam::Group::Jl(x) * TypeParam::Group::JrInverse(x), 1e-10));
     }
 }
 
