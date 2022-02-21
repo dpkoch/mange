@@ -135,6 +135,17 @@ bool isIdentityElement(const mange::SE3 &X) {
     return isIdentityElement(X.C()) && X.r().isZero();
 }
 
+// zero vectors
+template <typename Vector>
+Vector zero_vector() {
+    return Vector::Zero();
+}
+
+template <>
+mange::SO2::VectorType zero_vector<mange::SO2::VectorType>() {
+    return 0.0;
+}
+
 // random vectors
 template <typename Vector>
 Vector randomVector() {
@@ -304,9 +315,20 @@ template <typename T>
 // test fixture
 //==============================================================================
 
-template <typename Group>
+enum class DataSet { ZERO, RANDOM };
+
+template <typename G, DataSet D>
+struct TestTraits {
+    using Group = G;
+    static constexpr DataSet DATASET = D;
+};
+
+template <typename Traits>
 class LieGroupTest : public ::testing::Test {
    protected:
+    using Group = typename Traits::Group;
+    static constexpr DataSet DATASET = Traits::DATASET;
+
     using Vector = typename Group::VectorType;
     using Domain = typename Group::DomainType;
 
@@ -322,7 +344,7 @@ class LieGroupTest : public ::testing::Test {
         random_domain.reserve(SIZE);
 
         random_X.push_back(Group::Identity());
-        random_x.push_back(zero_vector());
+        random_x.push_back(zero_vector<Vector>());
         random_domain.push_back(Domain::Zero());
 
         for (size_t i = 1; i < SIZE; i++) {
@@ -331,33 +353,29 @@ class LieGroupTest : public ::testing::Test {
             random_domain.push_back(randomDomain<Domain>());
         }
     }
-
-    Vector zero_vector() { return Vector::Zero(); }
 };
-
-template <>
-double LieGroupTest<mange::SO2>::zero_vector() {
-    return 0.0;
-}
 
 //==============================================================================
 // test cases
 //==============================================================================
 
-using LieGroupTypes = ::testing::Types<mange::SO2, mange::SE2, mange::SO3, mange::SE3>;
-TYPED_TEST_SUITE(LieGroupTest, LieGroupTypes);
+using TestTraitsList = ::testing::Types<TestTraits<mange::SO2, DataSet::RANDOM>,
+                                        TestTraits<mange::SE2, DataSet::RANDOM>,
+                                        TestTraits<mange::SO3, DataSet::RANDOM>,
+                                        TestTraits<mange::SE3, DataSet::RANDOM>>;
+TYPED_TEST_SUITE(LieGroupTest, TestTraitsList);
 
 TYPED_TEST(LieGroupTest, IdentityValue) {
-    ASSERT_TRUE(isIdentityElement(TypeParam::Identity()));
+    ASSERT_TRUE(isIdentityElement(TypeParam::Group::Identity()));
 }
 
 TYPED_TEST(LieGroupTest, DefaultValue) {
-    ASSERT_TRUE(isIdentityElement(TypeParam()));
+    ASSERT_TRUE(isIdentityElement(typename TypeParam::Group()));
 }
 
 TYPED_TEST(LieGroupTest, Exp) {
     for (const auto &x : this->random_x) {
-        TypeParam X = TypeParam::Exp(x);
+        typename TypeParam::Group X = TypeParam::Group::Exp(x);
         ASSERT_FALSE(
             X.isIdentity());  //!< @todo Could fail if we happen to get a random zero element!
         ASSERT_TRUE(isValidGroupMember(X));
@@ -366,13 +384,14 @@ TYPED_TEST(LieGroupTest, Exp) {
 
 TYPED_TEST(LieGroupTest, Closure) {
     for (size_t i = 0; i < this->random_X.size(); i++) {
-        TypeParam X = this->random_X[i] * this->random_X[this->random_X.size() - i - 1];
+        typename TypeParam::Group X =
+            this->random_X[i] * this->random_X[this->random_X.size() - i - 1];
         ASSERT_TRUE(isValidGroupMember(X));
     }
 }
 
 TYPED_TEST(LieGroupTest, Identity) {
-    TypeParam identity;
+    typename TypeParam::Group identity;
     for (const auto &X : this->random_X) {
         ASSERT_TRUE((X * identity).isApprox(X));
         ASSERT_TRUE((identity * X).isApprox(X));
@@ -397,21 +416,21 @@ TYPED_TEST(LieGroupTest, Associativity) {
 }
 
 TYPED_TEST(LieGroupTest, HatVeeInverseMappings) {
-    // using TypeParam::typename hat;
-    // using TypeParam::typename vee;
+    // using TypeParam::Group::typename hat;
+    // using TypeParam::Group::typename vee;
 
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(vectorsEqual(TypeParam::vee(TypeParam::hat(x)), x));
+        ASSERT_TRUE(vectorsEqual(TypeParam::Group::vee(TypeParam::Group::hat(x)), x));
     }
 
     //! @todo test hat(vee(x)) direction (would require having log() -> Algebra function)
 }
 
 TYPED_TEST(LieGroupTest, ExpLogInverseMappings) {
-    constexpr auto Exp = &TypeParam::Exp;
+    constexpr auto Exp = &TypeParam::Group::Exp;
 
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(tangentVectorsEqual<TypeParam>(Exp(x).Log(), x));
+        ASSERT_TRUE(tangentVectorsEqual<typename TypeParam::Group>(Exp(x).Log(), x));
     }
 
     for (const auto &X : this->random_X) {
@@ -420,14 +439,14 @@ TYPED_TEST(LieGroupTest, ExpLogInverseMappings) {
 }
 
 TYPED_TEST(LieGroupTest, Adjoint) {
-    constexpr auto hat = &TypeParam::hat;
-    constexpr auto vee = &TypeParam::vee;
+    constexpr auto hat = &TypeParam::Group::hat;
+    constexpr auto vee = &TypeParam::Group::vee;
 
     for (size_t i = 0; i < TestFixture::SIZE; i++) {
         const auto &X = this->random_X[i];
         const auto &x = this->random_x[i];
 
-        typename TypeParam::VectorType Ad_x =
+        typename TypeParam::Group::VectorType Ad_x =
             X.Ad() * x;  // assignment required to evaluate Eigen product expression down to matrix
                          // type for template matching
         ASSERT_TRUE(vectorsEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
@@ -439,12 +458,12 @@ TYPED_TEST(LieGroupTest, Action) {
         const auto &X = this->random_X[i];
         const auto &v = this->random_domain[i];
 
-        ASSERT_TRUE(actionValid<TypeParam>(X * v, v));
+        ASSERT_TRUE(actionValid<typename TypeParam::Group>(X * v, v));
     }
 }
 
 TYPED_TEST(LieGroupTest, IdentityAction) {
-    const auto X = TypeParam::Identity();
+    const auto X = TypeParam::Group::Identity();
     for (size_t i = 0; i < TestFixture::SIZE; i++) {
         const auto &v = this->random_domain[i];
 
@@ -454,20 +473,20 @@ TYPED_TEST(LieGroupTest, IdentityAction) {
 
 TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(jacobianAndInverse(TypeParam::Jl(x), TypeParam::JlInverse(x)));
-        ASSERT_TRUE(jacobianAndInverse(TypeParam::Jr(x), TypeParam::JrInverse(x)));
+        ASSERT_TRUE(jacobianAndInverse(TypeParam::Group::Jl(x), TypeParam::Group::JlInverse(x)));
+        ASSERT_TRUE(jacobianAndInverse(TypeParam::Group::Jr(x), TypeParam::Group::JrInverse(x)));
     }
 }
 
 TYPED_TEST(LieGroupTest, AdjointAndJacobians) {
     for (const auto &x : this->random_x) {
-        const TypeParam X = TypeParam::Exp(x);
-        ASSERT_TRUE(nearlyEqual(X.Ad(), TypeParam::Jl(x) * TypeParam::JrInverse(x)));
+        const typename TypeParam::Group X = TypeParam::Group::Exp(x);
+        ASSERT_TRUE(nearlyEqual(X.Ad(), TypeParam::Group::Jl(x) * TypeParam::Group::JrInverse(x)));
     }
 }
 
 TYPED_TEST(LieGroupTest, InverseOfExpIsExpOfNegative) {
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(TypeParam::Exp(x).inverse().isApprox(TypeParam::Exp(-x)));
+        ASSERT_TRUE(TypeParam::Group::Exp(x).inverse().isApprox(TypeParam::Group::Exp(-x)));
     }
 }
