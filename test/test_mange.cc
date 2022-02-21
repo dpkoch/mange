@@ -317,13 +317,28 @@ class LieGroupTest : public ::testing::Test {
     std::vector<Domain> random_domain;
 
     LieGroupTest() {
-        for (size_t i = 0; i < SIZE; i++) {
+        random_X.reserve(SIZE);
+        random_x.reserve(SIZE);
+        random_domain.reserve(SIZE);
+
+        random_X.push_back(Group::Identity());
+        random_x.push_back(zero_vector());
+        random_domain.push_back(Domain::Zero());
+
+        for (size_t i = 1; i < SIZE; i++) {
             random_X.push_back(Group::Random());
             random_x.push_back(randomVector<Vector>());
             random_domain.push_back(randomDomain<Domain>());
         }
     }
+
+    Vector zero_vector() { return Vector::Zero(); }
 };
+
+template <>
+double LieGroupTest<mange::SO2>::zero_vector() {
+    return 0.0;
+}
 
 //==============================================================================
 // test cases
