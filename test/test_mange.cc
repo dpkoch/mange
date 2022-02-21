@@ -339,18 +339,26 @@ class LieGroupTest : public ::testing::Test {
     std::vector<Domain> random_domain;
 
     LieGroupTest() {
-        random_X.reserve(SIZE);
-        random_x.reserve(SIZE);
-        random_domain.reserve(SIZE);
+        switch (DATASET) {
+            case DataSet::ZERO:
+                random_X.push_back(Group::Identity());
+                random_x.push_back(zero_vector<Vector>());
+                random_domain.push_back(Domain::Zero());
 
-        random_X.push_back(Group::Identity());
-        random_x.push_back(zero_vector<Vector>());
-        random_domain.push_back(Domain::Zero());
-
-        for (size_t i = 1; i < SIZE; i++) {
-            random_X.push_back(Group::Random());
-            random_x.push_back(randomVector<Vector>());
-            random_domain.push_back(randomDomain<Domain>());
+                random_X.push_back(Group::Identity());
+                random_x.push_back(zero_vector<Vector>());
+                random_domain.push_back(Domain::Ones());
+                break;
+            case DataSet::RANDOM:
+                random_X.reserve(SIZE);
+                random_x.reserve(SIZE);
+                random_domain.reserve(SIZE);
+                for (size_t i = 0; i < SIZE; i++) {
+                    random_X.push_back(Group::Random());
+                    random_x.push_back(randomVector<Vector>());
+                    random_domain.push_back(randomDomain<Domain>());
+                }
+                break;
         }
     }
 };
@@ -359,9 +367,13 @@ class LieGroupTest : public ::testing::Test {
 // test cases
 //==============================================================================
 
-using TestTraitsList = ::testing::Types<TestTraits<mange::SO2, DataSet::RANDOM>,
+using TestTraitsList = ::testing::Types<TestTraits<mange::SO2, DataSet::ZERO>,
+                                        TestTraits<mange::SO2, DataSet::RANDOM>,
+                                        TestTraits<mange::SE2, DataSet::ZERO>,
                                         TestTraits<mange::SE2, DataSet::RANDOM>,
+                                        TestTraits<mange::SO3, DataSet::ZERO>,
                                         TestTraits<mange::SO3, DataSet::RANDOM>,
+                                        TestTraits<mange::SE3, DataSet::ZERO>,
                                         TestTraits<mange::SE3, DataSet::RANDOM>>;
 TYPED_TEST_SUITE(LieGroupTest, TestTraitsList);
 
@@ -376,8 +388,6 @@ TYPED_TEST(LieGroupTest, DefaultValue) {
 TYPED_TEST(LieGroupTest, Exp) {
     for (const auto &x : this->random_x) {
         typename TypeParam::Group X = TypeParam::Group::Exp(x);
-        ASSERT_FALSE(
-            X.isIdentity());  //!< @todo Could fail if we happen to get a random zero element!
         ASSERT_TRUE(isValidGroupMember(X));
     }
 }
