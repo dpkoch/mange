@@ -3,6 +3,12 @@ load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 load("@rules_python//python:defs.bzl", "py_test")
 
 cc_library(
+    name = "algorithm_hdrs",
+    hdrs = ["include/mange/algorithm/wahba.hh"],
+    strip_include_prefix = "include",
+)
+
+cc_library(
     name = "mange",
     srcs = [
         "src/mange/SE2.cc",
@@ -19,7 +25,22 @@ cc_library(
     ],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
-    deps = ["@eigen3"],
+    deps = [
+        ":algorithm_hdrs",
+        "@eigen3",
+    ],
+)
+
+cc_library(
+    name = "wahba",
+    srcs = ["src/mange/algorithm/wahba.cc"],
+    hdrs = ["include/mange/algorithm/wahba.hh"],
+    strip_include_prefix = "include",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":mange",
+        "@eigen3",
+    ],
 )
 
 cc_test(

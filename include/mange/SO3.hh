@@ -4,6 +4,8 @@
 
 #include <eigen3/Eigen/Core>
 
+#include "mange/algorithm/wahba.hh"
+
 namespace mange {
 
 class SO3 {
@@ -46,6 +48,8 @@ class SO3 {
     bool isIdentity() const;
 
     const MatrixType &matrix() const { return C_; }
+
+    friend SO3 algorithm::wahba(const std::vector<algorithm::WahbaSample> &);
 
    private:
     static constexpr double EPSILON = 1e-12;
