@@ -31,6 +31,16 @@ cc_library(
     ],
 )
 
+cc_test(
+    name = "test_mange",
+    size = "small",
+    srcs = ["test/test_mange.cc"],
+    deps = [
+        ":mange",
+        "@googletest//:gtest_main",
+    ],
+)
+
 cc_library(
     name = "wahba",
     srcs = ["src/mange/algorithm/wahba.cc"],
@@ -44,11 +54,13 @@ cc_library(
 )
 
 cc_test(
-    name = "test_mange",
+    name = "test_wahba",
     size = "small",
-    srcs = ["test/test_mange.cc"],
+    srcs = ["test/test_wahba.cc"],
     deps = [
         ":mange",
+        ":wahba",
+        "@eigen3",
         "@googletest//:gtest_main",
     ],
 )
