@@ -6,4 +6,6 @@
 .vscode/
 
 build/
+
+/MODULE.bazel.lock
 bazel-*

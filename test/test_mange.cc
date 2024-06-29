@@ -2,7 +2,7 @@
 #include <random>
 #include <vector>
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 #include <gtest/gtest.h>
 
 #include "mange/mange.hh"

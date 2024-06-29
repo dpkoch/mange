@@ -1,6 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@pybind11_bazel//:build_defs.bzl", "pybind_extension")
 load("@rules_python//python:defs.bzl", "py_test")
+load("@rules_python//python:pip.bzl", "compile_pip_requirements")
 
 cc_library(
     name = "mange",
@@ -19,7 +20,7 @@ cc_library(
     ],
     strip_include_prefix = "include",
     visibility = ["//visibility:public"],
-    deps = ["@eigen3"],
+    deps = ["@eigen"],
 )
 
 cc_test(
@@ -46,7 +47,13 @@ py_test(
     srcs = ["test/test_mange_python.py"],
     data = [":mange_python.so"],
     deps = [
-        "@pip//pypi__numpy",
-        "@pip//pypi__pytest",
+        "@pypi//numpy",
+        "@pypi//pytest",
     ],
+)
+
+compile_pip_requirements(
+    name = "requirements",
+    src = "requirements.txt",
+    requirements_txt = "requirements_lock.txt",
 )
