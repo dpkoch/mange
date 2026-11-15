@@ -6,41 +6,11 @@
 #include <gtest/gtest.h>
 
 #include "mange/mange.hh"
+#include "test/helpers.hh"
 
 //==============================================================================
 // helper functions
 //==============================================================================
-
-bool doubleEqual(double lhs, double rhs) {
-    ::testing::internal::Double left(lhs), right(rhs);
-    return left.AlmostEquals(right);
-}
-
-bool doubleNear(double lhs, double rhs, double epsilon = std::numeric_limits<double>::epsilon()) {
-    return std::abs(lhs - rhs) <= std::max(std::abs(rhs), std::abs(lhs)) * epsilon;
-}
-
-template <typename DerivedLhs, typename DerivedRhs>
-::testing::AssertionResult nearlyEqual(const Eigen::MatrixBase<DerivedLhs> &lhs,
-                                       const Eigen::MatrixBase<DerivedRhs> &rhs,
-                                       double epsilon = 1e-12) {
-    if (lhs.isApprox(rhs, epsilon))
-        return ::testing::AssertionSuccess();
-    else {
-        return ::testing::AssertionFailure() << "lhs:" << std::endl
-                                             << lhs << std::endl
-                                             << "rhs:" << std::endl
-                                             << rhs;
-    }
-}
-
-::testing::AssertionResult nearlyEqual(double lhs, double rhs, double epsilon = 1e-12) {
-    if (doubleNear(lhs, rhs, epsilon))
-        return ::testing::AssertionSuccess();
-    else {
-        return ::testing::AssertionFailure() << "lhs: " << lhs << std::endl << "rhs: " << rhs;
-    }
-}
 
 // check for NaN
 template <typename Derived>
@@ -74,7 +44,7 @@ template <typename Group>
         return ::testing::AssertionFailure() << "C^T * C is not identity: " << std::endl
                                              << matrix.transpose() * matrix;
     }
-    if (!doubleEqual(matrix.determinant(), 1.0)) {
+    if (!test::doubleEqual(matrix.determinant(), 1.0)) {
         return ::testing::AssertionFailure() << "Determinant is not 1: " << matrix.determinant();
     }
 
@@ -216,7 +186,7 @@ template <>
 {
     double constrained_x = wrap_angle(original_x);
 
-    if (doubleNear(log_x, constrained_x, 1e-10))
+    if (test::doubleNear(log_x, constrained_x, 1e-10))
         return ::testing::AssertionSuccess();
     else
         return ::testing::AssertionFailure() << "log: " << std::endl
@@ -244,7 +214,7 @@ template <>
 
     mange::SO3::VectorType constrained_x = wrap_angle(original_x);
 
-    if (nearlyEqual(log_x, constrained_x, 1e-10))
+    if (test::nearlyEqual(log_x, constrained_x, 1e-10))
         return ::testing::AssertionSuccess();
     else
         return ::testing::AssertionFailure()
@@ -268,7 +238,7 @@ template <>
 
 template <typename Domain>
 ::testing::AssertionResult normEqual(const Domain &after, const Domain &before) {
-    if (doubleEqual(after.norm(), before.norm()))
+    if (test::doubleEqual(after.norm(), before.norm()))
         return ::testing::AssertionSuccess();
     else
         return ::testing::AssertionFailure()
@@ -320,7 +290,7 @@ template <typename T>
 }
 
 ::testing::AssertionResult jacobianAndInverse(double J, double Jinverse) {
-    if (doubleEqual(J * Jinverse, 1.0))
+    if (test::doubleEqual(J * Jinverse, 1.0))
         return ::testing::AssertionSuccess();
     else
         return ::testing::AssertionFailure()
@@ -424,7 +394,7 @@ TYPED_TEST(LieGroupTest, LogOfIdentityIsZero) {
     typename TypeParam::Group::VectorType x = TypeParam::Group::Identity().Log();
 
     ASSERT_TRUE(isNotNaN(x));
-    ASSERT_TRUE(nearlyEqual(x, zero_vector<typename TypeParam::Group::VectorType>()));
+    ASSERT_TRUE(test::nearlyEqual(x, zero_vector<typename TypeParam::Group::VectorType>()));
 }
 
 TYPED_TEST(LieGroupTest, Closure) {
@@ -452,7 +422,7 @@ TYPED_TEST(LieGroupTest, Inverse) {
 }
 
 TYPED_TEST(LieGroupTest, Associativity) {
-    ASSERT_GT(this->random_X.size(), 2);
+    ASSERT_GT(this->random_X.size(), 2u);
     for (size_t i = 0; i < this->random_X.size() - 2; i++) {
         const auto &A = this->random_X[i];
         const auto &B = this->random_X[i + 1];
@@ -467,7 +437,7 @@ TYPED_TEST(LieGroupTest, HatVeeInverseMappings) {
     // using TypeParam::Group::typename vee;
 
     for (const auto &x : this->random_x) {
-        ASSERT_TRUE(nearlyEqual(TypeParam::Group::vee(TypeParam::Group::hat(x)), x));
+        ASSERT_TRUE(test::nearlyEqual(TypeParam::Group::vee(TypeParam::Group::hat(x)), x));
     }
 
     //! @todo test hat(vee(x)) direction (would require having log() -> Algebra function)
@@ -497,7 +467,7 @@ TYPED_TEST(LieGroupTest, Adjoint) {
         typename TypeParam::Group::VectorType Ad_x =
             X.Ad() * x;  // assignment required to evaluate Eigen product expression down to matrix
                          // type for template matching
-        ASSERT_TRUE(nearlyEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
+        ASSERT_TRUE(test::nearlyEqual(Ad_x, vee(X.matrix() * hat(x) * X.inverse().matrix())));
     }
 }
 
@@ -513,7 +483,7 @@ TYPED_TEST(LieGroupTest, Action) {
 TYPED_TEST(LieGroupTest, IdentityAction) {
     const auto X = TypeParam::Group::Identity();
     for (const auto &v : this->random_domain) {
-        ASSERT_TRUE(nearlyEqual(X * v, v));
+        ASSERT_TRUE(test::nearlyEqual(X * v, v));
     }
 }
 
@@ -531,8 +501,8 @@ TYPED_TEST(LieGroupTest, JacobiansAndInverses) {
 TYPED_TEST(LieGroupTest, AdjointAndJacobians) {
     for (const auto &x : this->random_x) {
         const typename TypeParam::Group X = TypeParam::Group::Exp(x);
-        ASSERT_TRUE(
-            nearlyEqual(X.Ad(), TypeParam::Group::Jl(x) * TypeParam::Group::JrInverse(x), 1e-10));
+        ASSERT_TRUE(test::nearlyEqual(
+            X.Ad(), TypeParam::Group::Jl(x) * TypeParam::Group::JrInverse(x), 1e-10));
     }
 }
 
